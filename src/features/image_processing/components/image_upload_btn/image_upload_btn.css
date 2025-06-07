@@ -1,0 +1,32 @@
+.upload_btn{
+
+    width: 5rem;
+    aspect-ratio: 1/1;
+
+    border-radius: 50%;
+    border-color: red;
+    border-style: solid;
+
+
+    
+    position: relative;
+    display: flex;
+    
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload_btn svg {
+    width: 50%;
+    fill: red;
+
+}
+
+.upload_btn:hover {
+    background-color: red;
+}
+
+.upload_btn:hover svg {
+    fill : white;
+}

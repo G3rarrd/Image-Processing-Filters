@@ -1,0 +1,14 @@
+.home_btn{
+    position: relative;
+    background-color: brown;
+    padding : 0.25rem 1.25rem;
+    display : flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.home_btn svg{
+    width: 1.5rem;
+}

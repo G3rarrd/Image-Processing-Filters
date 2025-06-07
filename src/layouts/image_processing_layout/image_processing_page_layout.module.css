@@ -1,0 +1,30 @@
+.image_processing_main {
+    position: relative;
+    background-color: green;
+    width: 100%;
+
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    /* Fills the remaining space of the container */
+    flex-grow: 1; /* The root at App.css is using flex box */
+}
+
+.header{
+    background-color: red;
+
+    /* Font styling */
+    font-size: 1.25rem;
+    font-weight: 700;
+
+    /* alignment */
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+
+    /* margins and paddings */
+    padding: 0.25rem 1rem;
+}
+

@@ -1,0 +1,69 @@
+.imgIcon{
+    width : 20%;
+}
+
+.image_processing_container{
+    position: relative;
+
+    width : 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    
+    background-color: blue;
+}
+
+.image_upload_div{
+    position: relative;
+    
+    width: 70%;
+    aspect-ratio: 16/9;
+
+    background-color: white;
+
+    color : black;
+    font-size: 1.3rem;
+
+    border-style: dashed;
+    border-color: gray;
+    border-radius: 1rem;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+}
+
+.uploaded_img_div {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    zoom:3.0;
+}
+
+.browseBtn {
+    color: blue;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.upload_downLoad_btn_area {
+    position: relative;
+    width: 100%;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
