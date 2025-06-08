@@ -2,11 +2,14 @@ import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import WebGLShaderPass from "../webGLShaderPass";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
 
 class WebGLDithering implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool: FramebufferPool;
     
     private  program: WebGLProgram | null = null; 
     private spreadValue : number = 2;
@@ -50,9 +53,11 @@ class WebGLDithering implements RenderFilter {
     ]);
 
     constructor (
-        wgl:WebGLCore, 
+        wgl:WebGLCore,
+        framebufferPool: FramebufferPool
     ) {
         this.wgl = wgl;
+        this.framebufferPool = framebufferPool;
         this.postProcessing = new PostProcessingVertexShader();
     }
 
@@ -65,39 +70,22 @@ class WebGLDithering implements RenderFilter {
         this.bayerType = bayerType;
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
-        if (! this.program) throw new Error("Dithering Shader program is not compiled");
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+        if (! this.program) throw new Error("Edge Blur Pass Shader program is not compiled");
         
-        const gl: WebGL2RenderingContext = this.wgl.gl;
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
-        
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
-    private setUniforms () : void {
-        if (! this.program) throw new Error("Dithering Shader program is not compiled");
-        
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
+
         const bayer : number[] | undefined = this.bayers.get(this.bayerType);
         const TEX_NUM = 0;
 
@@ -106,10 +94,10 @@ class WebGLDithering implements RenderFilter {
         const U_BAYER_SIZE = 'u_bayer_size';
         const U_SPREAD_VALUE = 'u_spread_value'
 
-        const imageLocation = gl.getUniformLocation(this.program, U_IMAGE);
-        const bayerLocation = gl.getUniformLocation(this.program,  U_BAYER);
-        const bayerSizeLocation = gl.getUniformLocation(this.program,  U_BAYER_SIZE);
-        const spreadLocation = gl.getUniformLocation(this.program, U_SPREAD_VALUE);
+        const imageLocation = gl.getUniformLocation(program, U_IMAGE);
+        const bayerLocation = gl.getUniformLocation(program,  U_BAYER);
+        const bayerSizeLocation = gl.getUniformLocation(program,  U_BAYER_SIZE);
+        const spreadLocation = gl.getUniformLocation(program, U_SPREAD_VALUE);
         
         if (! bayer) throw new Error("Invalid bayer type");
 

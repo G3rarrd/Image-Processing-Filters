@@ -19,6 +19,9 @@ import WebGLGradientAlignedBilateral from './nonCompositeTextures/webGLGradientA
 import WebGLCore from '../../webGLCore';
 import WebGLSobel from './nonCompositeTextures/webGLSobel';
 import WebGLSharpen from './nonCompositeTextures/webGLSharpen';
+import FramebufferPool from '../../framebuffer_textures/framebufferPool';
+import WebGLStreamlineBlur from './nonCompositeTextures/webGLStreamlineBlur';
+import WebGLStructuredTensor from './nonCompositeTextures/webGLStructuredTensor';
 
 class WebGLCompileFilters {
     public readonly grayScale : WebGLGrayScale;
@@ -41,29 +44,33 @@ class WebGLCompileFilters {
     public readonly gradientAlignedBilateral : WebGLGradientAlignedBilateral;
     public readonly sobel : WebGLSobel;
     public readonly sharpen : WebGLSharpen;
+    public readonly streamlineBlur : WebGLStreamlineBlur;
+    public readonly structuredTensor : WebGLStructuredTensor;
     public readonly allFilters: { init: () => void }[];
 
-    constructor (wgl : WebGLCore) {
-        this.grayScale = new WebGLGrayScale(wgl);
-        this.invert = new WebGLInvert(wgl);
-        this.binaryThreshold = new WebGLBinaryThreshold(wgl);
-        this.emboss = new WebGLEmboss(wgl);
-        this.gaussianBlurPass = new WebGLGaussianBlurPass(wgl);
-        this.quantization = new WebGLQuantization(wgl);
-        this.dithering = new WebGLDithering(wgl);
-        this.subtract = new WebGLSubtract(wgl);
-        this.xdogThreshold = new WebGLXDoGThreshold(wgl);
-        this.tanhThreshold = new WebGLTanhThreshold(wgl);
-        this.edgeBlurPass = new WebGLEdgeBlurPass(wgl);
-        this.eigenvector = new WebGLEigenvector(wgl);
-        this.etfSmoothingPass = new WebGLETFSmoothingPass(wgl);
-        this.flowField = new WebGLFlowField(wgl);
-        this.superImpose = new WebGLSuperImpose(wgl);
-        this.pixelize = new WebGLPixelize(wgl);
-        this.subtractFDoG = new WebGLSubtractFDoG(wgl);
-        this.gradientAlignedBilateral = new WebGLGradientAlignedBilateral(wgl);
-        this.sobel = new WebGLSobel(wgl);
-        this.sharpen = new WebGLSharpen(wgl);
+    constructor (wgl : WebGLCore, framebufferPool : FramebufferPool) {
+        this.grayScale = new WebGLGrayScale(wgl, framebufferPool);
+        this.invert = new WebGLInvert(wgl, framebufferPool);
+        this.binaryThreshold = new WebGLBinaryThreshold(wgl, framebufferPool);
+        this.emboss = new WebGLEmboss(wgl, framebufferPool);
+        this.gaussianBlurPass = new WebGLGaussianBlurPass(wgl, framebufferPool);
+        this.quantization = new WebGLQuantization(wgl, framebufferPool);
+        this.dithering = new WebGLDithering(wgl, framebufferPool);
+        this.subtract = new WebGLSubtract(wgl, framebufferPool);
+        this.xdogThreshold = new WebGLXDoGThreshold(wgl, framebufferPool);
+        this.tanhThreshold = new WebGLTanhThreshold(wgl, framebufferPool);
+        this.edgeBlurPass = new WebGLEdgeBlurPass(wgl, framebufferPool);
+        this.eigenvector = new WebGLEigenvector(wgl, framebufferPool);
+        this.etfSmoothingPass = new WebGLETFSmoothingPass(wgl, framebufferPool);
+        this.flowField = new WebGLFlowField(wgl, framebufferPool);
+        this.superImpose = new WebGLSuperImpose(wgl, framebufferPool);
+        this.pixelize = new WebGLPixelize(wgl, framebufferPool);
+        this.subtractFDoG = new WebGLSubtractFDoG(wgl, framebufferPool);
+        this.gradientAlignedBilateral = new WebGLGradientAlignedBilateral(wgl, framebufferPool);
+        this.sobel = new WebGLSobel(wgl, framebufferPool);
+        this.sharpen = new WebGLSharpen(wgl, framebufferPool);
+        this.streamlineBlur = new WebGLStreamlineBlur(wgl, framebufferPool);
+        this.structuredTensor = new WebGLStructuredTensor(wgl, framebufferPool);
 
 
         this.allFilters = [
@@ -87,6 +94,8 @@ class WebGLCompileFilters {
         this.gradientAlignedBilateral,
         this.sobel,
         this.sharpen,
+        this.streamlineBlur,
+        this.structuredTensor,
         ];
     }
 

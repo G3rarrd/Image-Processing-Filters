@@ -1,5 +1,5 @@
-import FramebufferPair from "../../framebuffer_textures/framebufferPair";
+import Framebuffer from "../../framebuffer_textures/framebuffer";
 
 export interface RenderFilter {
-    render(inputTextures : WebGLTexture[], fboPair : FramebufferPair) : WebGLTexture; 
+    render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) :  Framebuffer ;
 }

@@ -1,14 +1,23 @@
-import { useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import styles from './image_processing_filter_btn.module.css';
 import useGrayscale from './hooks/useGrayscale';
 import useInvert from './hooks/useInvert';
 import useSobel from './hooks/useSobel';
 import useSharpen from './hooks/useSharpen';
 import useEmboss from './hooks/useEmboss';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { ImageProcessingContext } from '../../../components/image_processing_context/image_processing_provider';
 
 const ImageProcessingFilterBtn = () => {
+    const {rendererRef} = useContext(ImageProcessingContext);
     const dropdownRef = useRef<HTMLButtonElement | null>(null);
     const [open, setOpen] = useState<boolean>(false);
+
+    // useHotkeys('ctrl+z', () => {
+    //     if (! rendererRef || ! rendererRef.current) return;
+    //     rendererRef.current.historyStack.undo();
+    //     rendererRef.current.renderScene();
+    // })
 
     const {handleGrayscale} = useGrayscale();
     const {handleInvert} = useInvert();

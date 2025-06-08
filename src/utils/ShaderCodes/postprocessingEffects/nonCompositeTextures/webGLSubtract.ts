@@ -1,61 +1,51 @@
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
+import WebGLShaderPass from "../webGLShaderPass";
 import { RenderFilter } from "../webGLRenderFilter";
 
 class WebGLSubtract implements RenderFilter {
     public program : WebGLProgram | null = null;
-    private wgl : WebGLCore;
-    private postProcessing : PostProcessingVertexShader;
-    constructor (wgl: WebGLCore) {
+    private readonly wgl : WebGLCore;
+    private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool :FramebufferPool;
+    constructor (
+        wgl: WebGLCore,
+        framebufferPool :FramebufferPool
+    ) {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
-        
+        this.framebufferPool = framebufferPool;
     }
 
     public init() : void {
         this.program = this.wgl.compileAndLinkProgram(this.postProcessing.shader, WebGLSubtract.fragmentShader, "Subtract Shader");
     }
 
-    private setUniforms() : void {
-        if (! this.program) throw new Error("Subtract Program is not compiled");
-
-        const gl  = this.wgl.gl;
-        const imageLocation1 = gl.getUniformLocation(this.program, "u_image1");
-        const imageLocation2 = gl.getUniformLocation(this.program, "u_image2");
+    private setUniforms(gl: WebGL2RenderingContext, program: WebGLProgram) : void {
+        const imageLocation1 = gl.getUniformLocation(program, "u_image1");
+        const imageLocation2 = gl.getUniformLocation(program, "u_image2");
         if (imageLocation1 === null || imageLocation2 === null) throw new Error("Failed to get uniform location for u_image1 or u_image2");
         gl.uniform1i(imageLocation1, 0);
         gl.uniform1i(imageLocation2, 1);
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer {
+        /* Uses 2 textures */ 
         if (! this.program) throw new Error("Subtract Program is not compiled");
         
-        const gl: WebGL2RenderingContext = this.wgl.gl;
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
-        
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
+    
     private static readonly fragmentShader = 
         `#version 300 es
         precision mediump float;

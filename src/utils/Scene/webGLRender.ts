@@ -7,7 +7,8 @@ import WebGLCompileFilters from "../ShaderCodes/postprocessingEffects/webGLCompi
 import WebGLRenderPipeline from "./webGLRenderPipeline";
 import { cameraVertexShaderCode } from "../ShaderCodes/vertexShaders/cameraVertexShader";
 import FramebufferPool from '../framebuffer_textures/framebufferPool';
-import WebGLEmboss from '../ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLEmboss';
+import WebGLHistoryStack from "./webGLHistoryStack";
+import WebGLXDoG from "../ShaderCodes/postprocessingEffects/compositeTextures/webGLXDoG";
 
 
 class WebGLRenderer {
@@ -22,6 +23,7 @@ class WebGLRenderer {
     public compiledFilters : WebGLCompileFilters;
     public renderPipeline : WebGLRenderPipeline;
     public framebufferPool : FramebufferPool;
+    public historyStack : WebGLHistoryStack;
 
     
     constructor(
@@ -31,8 +33,9 @@ class WebGLRenderer {
     ) {
         this.wgl = new WebGLCore(gl, gl.canvas.width, gl.canvas.height);
         this.framebufferPool = new FramebufferPool(gl);
-        this.renderPipeline = new WebGLRenderPipeline(this.wgl, img, this.framebufferPool);
-        this.compiledFilters = new WebGLCompileFilters(this.wgl);
+        this.historyStack = new WebGLHistoryStack(this.wgl);
+        this.renderPipeline = new WebGLRenderPipeline(this.wgl, img, this.framebufferPool, this.historyStack);
+        this.compiledFilters = new WebGLCompileFilters(this.wgl, this.framebufferPool);
         this.compiledFilters.initAll();
         
         this.gl = gl;
@@ -41,8 +44,12 @@ class WebGLRenderer {
         this.img = img;
         this.tex = new Texture(gl);
         this.currentTexture = this.tex.createTextureFromImage(img);
+        this.historyStack.add(this.currentTexture); // Ensures the 
 
         this.init();
+        const xdog = new WebGLXDoG(this.wgl, this.framebufferPool, this.compiledFilters);
+        xdog.setAttributes(2, 2, 1, 10, 5, 0.99);
+        this.renderPipeline.addFilter(xdog);
         this.renderPipeline.renderPass(this.currentTexture);
     }
 
@@ -94,7 +101,8 @@ class WebGLRenderer {
 
         if (! this.renderPipeline.currentTex) throw new Error("No Texture available");
         if (! this.program) throw new Error("No program is available for final rendering");
-        this.currentTexture = this.renderPipeline.currentTex;
+        
+        this.currentTexture = this.historyStack.getTexture();
         
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);

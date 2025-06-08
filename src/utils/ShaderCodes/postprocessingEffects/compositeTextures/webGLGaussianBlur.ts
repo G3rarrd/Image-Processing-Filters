@@ -1,21 +1,28 @@
 import GaussianCalculations from "../../../math/gaussianCalculation";
 import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
-import WebGLGaussianBlurPass from "../nonCompositeTextures/webGLGaussianBlurPass";
-import FramebufferPair from '../../../framebuffer_textures/framebufferPair';
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import WebGLCompileFilters from "../webGLCompileFilters";
+import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
 
 class WebGLGaussianBlur implements RenderFilter{
     private readonly wgl : WebGLCore;
-    private readonly blur : WebGLGaussianBlurPass;
+    private readonly compiledFilters : WebGLCompileFilters;
+    private readonly framebufferPool: FramebufferPool;
     private sigma : number = 1.6;
     private kernelSize : number = 3;
     private gaussianCalc : GaussianCalculations;
     private kernel1D : number[] = [0, 1, 0];
 
-    constructor (wgl:WebGLCore) {
+    constructor (
+        wgl:WebGLCore,
+        compiledFilters : WebGLCompileFilters,
+        framebufferPool: FramebufferPool
+    ) {
         this.wgl = wgl;
+        this.framebufferPool = framebufferPool;
         this.gaussianCalc = new GaussianCalculations();
-        this.blur = new WebGLGaussianBlurPass(this.wgl);
+        this.compiledFilters = compiledFilters;
     }
 
     public setAttributes(sigma : number) {
@@ -24,25 +31,24 @@ class WebGLGaussianBlur implements RenderFilter{
         this.kernel1D = this.gaussianCalc.get1DGaussianKernel(this.kernelSize, sigma) ;
     }
     
-    public render(inputTextures : WebGLTexture[], fboPair: FramebufferPair) {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer{
         /**
-
+         * Uses 1 input Texture
+         * @param inputTextures[0] is an image texture
         */
+        const w : number = textureWidth;
+        const h : number = textureHeight;
+        const gblurPass = this.compiledFilters.gaussianBlurPass;
 
-        if (this.sigma < 0.01) return inputTextures[0];
+        gblurPass.setAttributes(this.kernel1D, [0, 1]);
+        const pass1Fbo = gblurPass.render([inputTextures[0]], w, h);
 
-        const fboWrite = fboPair.write();
-        const fboA = fboPair.read();
 
-        const pairA = new FramebufferPair(fboWrite, fboA);
+        gblurPass.setAttributes(this.kernel1D, [1, 0]);
+        const finalPassFbo = gblurPass.render([pass1Fbo.getTexture()], w, h);
+        this.framebufferPool.release(pass1Fbo) // pass1Fbo is not needed again
 
-        this.blur.setAttributes(this.kernel1D, [0, 1]);
-        const pass1 = this.blur.render([inputTextures[0]], pairA);
-
-        this.blur.setAttributes(this.kernel1D, [1, 0]);
-        const pass2 = this.blur.render([pass1], pairA);
-        
-        return pass2;
+        return finalPassFbo;
     }
 }
 

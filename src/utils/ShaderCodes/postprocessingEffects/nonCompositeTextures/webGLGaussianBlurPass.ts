@@ -2,12 +2,15 @@ import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import WebGLShaderPass from "../webGLShaderPass";
+import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
 
 class WebGLGaussianBlurPass implements RenderFilter {
     private static readonly MAX_KERNEL_SIZE : number= 200;
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool: FramebufferPool;
     private program: WebGLProgram | null = null; 
     private  kernel1D : number[] = [0,1,0];
     private  direction: [number, number] = [0, 1]; // Either (1, 0) or (0, 1);
@@ -22,9 +25,11 @@ class WebGLGaussianBlurPass implements RenderFilter {
 
     constructor (
         wgl:WebGLCore, 
+        framebufferPool:FramebufferPool
     ) {
-        this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
+        this.wgl = wgl;
+        this.framebufferPool = framebufferPool;
     }
 
     public init() : void {
@@ -36,41 +41,24 @@ class WebGLGaussianBlurPass implements RenderFilter {
         this.direction = direction;
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
         if (! this.program) throw new Error("Gaussian blur pass is not compiled");
-
-        const gl: WebGL2RenderingContext = this.wgl.gl;
-
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
         
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
     
 
-    private setUniforms () : void {
-        if (! this.program) throw new Error("Gaussian blur pass is not compiled");
+    private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         
-        const gl : WebGL2RenderingContext = this.wgl.gl;
 
         const U_DIRECTION : string = 'u_direction';
         const U_KERNEL : string = 'u_kernel';
@@ -78,14 +66,11 @@ class WebGLGaussianBlurPass implements RenderFilter {
         const U_KERNEL_SIZE : string = 'u_kernel_size'
         const KERNEL_SIZE : number = this.kernel1D.length;
 
-        const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_IMAGE);
-        const kernelSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(
-            this.program,
-            U_KERNEL_SIZE
-        );
+        const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE);
+        const kernelSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(program,U_KERNEL_SIZE);
 
-        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_KERNEL);
-        const directionLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_DIRECTION);
+        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL);
+        const directionLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_DIRECTION);
         
         if (!kernelLocation) throw new Error(setUniformLocationError(U_KERNEL));
         if (!imageLocation) throw new Error(setUniformLocationError(U_IMAGE));

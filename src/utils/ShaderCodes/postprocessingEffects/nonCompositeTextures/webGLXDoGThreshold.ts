@@ -1,12 +1,15 @@
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
 import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from '../../vertexShaders/postProcessingVertexShader';
 import { RenderFilter } from "../webGLRenderFilter";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
+import WebGLShaderPass from "../webGLShaderPass";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 
 class WebGLXDoGThreshold implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool : FramebufferPool;
     private program : WebGLProgram | null = null;
     private tau: number = 1.0;
     private epsilon: number = 0.9;
@@ -14,9 +17,11 @@ class WebGLXDoGThreshold implements RenderFilter {
 
     constructor(
         wgl : WebGLCore, 
+        framebufferPool : FramebufferPool
     ) {
-        this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
+        this.wgl = wgl;
+        this.framebufferPool = framebufferPool;
     }
 
     public init () : void {
@@ -29,39 +34,22 @@ class WebGLXDoGThreshold implements RenderFilter {
         this.phi = phi;
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer {
+        /* Uses 2 textures */ 
         if (! this.program) throw new Error("XDoG Threshold Program is not compiled");
 
-        const gl: WebGL2RenderingContext = this.wgl.gl;
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
-        
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
-    private setUniforms() {
-        if (! this.program) throw new Error("XDoG Threshold Program is not compiled");
-
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms(gl: WebGL2RenderingContext, program: WebGLProgram) {
         const TEX_NUM : number = 0;
         const TEX_NUM_1 : number = 1;
         
@@ -72,11 +60,11 @@ class WebGLXDoGThreshold implements RenderFilter {
         const U_PHI : string = 'u_phi';
         const U_EPSILON : string = 'u_epsilon';
 
-        const image1Location : WebGLUniformLocation | null = gl.getUniformLocation(this.program, "u_image_1");
-        const image2Location : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_IMAGE_2);
-        const tauLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_TAU);
-        const phiLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program,U_PHI);
-        const epsilonLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program,U_EPSILON);
+        const image1Location : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE_1);
+        const image2Location : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE_2);
+        const tauLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_TAU);
+        const phiLocation : WebGLUniformLocation | null = gl.getUniformLocation(program,U_PHI);
+        const epsilonLocation : WebGLUniformLocation | null = gl.getUniformLocation(program,U_EPSILON);
 
         if (!image1Location) throw new Error(setUniformLocationError(U_IMAGE_1));
         if (!image2Location) throw new Error(setUniformLocationError(U_IMAGE_2));
@@ -94,7 +82,6 @@ class WebGLXDoGThreshold implements RenderFilter {
     private fragmentShader = 
     `#version 300 es
     precision mediump float;
-
     
     uniform sampler2D u_image_1;
     uniform sampler2D u_image_2;

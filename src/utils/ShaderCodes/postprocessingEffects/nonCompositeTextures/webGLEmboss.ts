@@ -1,15 +1,21 @@
 import { RenderFilter } from "../webGLRenderFilter";
 import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
+import WebGLShaderPass from "../webGLShaderPass";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
 class WebGLEmboss implements RenderFilter{
+    private readonly framebufferPool: FramebufferPool;
     private readonly wgl : WebGLCore;
-    private readonly  postProcessing : PostProcessingVertexShader;
     public program : WebGLProgram | null = null;
-    
-    constructor (wgl: WebGLCore) {
+    private postProcessing : PostProcessingVertexShader;
+    constructor (
+        wgl: WebGLCore, 
+        framebufferPool: FramebufferPool,
+    ) {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
+        this.framebufferPool = framebufferPool;
     }
 
     public init() {
@@ -30,7 +36,7 @@ class WebGLEmboss implements RenderFilter{
     
     uniform sampler2D u_image;
     uniform float u_kernel[9];
-    uniform float u_kernelWeight;
+    uniform float u_kernel_weight;
 
     in vec2 v_texCoord;
 
@@ -51,24 +57,22 @@ class WebGLEmboss implements RenderFilter{
         texture(u_image, v_texCoord + onePixel * vec2(1, 1)) * u_kernel[8];
 
         vec3 color = colorSum.rgb;
-        if (u_kernelWeight != 0.0) {
-            color /= u_kernelWeight;
+        if (u_kernel_weight != 0.0) {
+            color /= u_kernel_weight;
         }
 
         outColor = vec4(color, 1.0);
     }
     `
 
-    private setUniforms  ()  {
-        if (! this.program) throw new Error("Emboss Program failed to load");
-        const gl = this.wgl.gl;
+    private setUniforms  (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         const TEX_NUM = 0;
-
-        const imageLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, "u_image");
-        
-        
-        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, "u_kernel");
-        const kernelWeightLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, "u_kernelWeight");
+        const U_IMAGE = 'u_image';
+        const U_KERNEL = 'u_kernel';
+        const U_KERNEL_WEIGHT = 'u_kernel_weight';
+        const imageLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE);
+        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL);
+        const kernelWeightLocation : WebGLUniformLocation | null = gl.getUniformLocation(program,U_KERNEL_WEIGHT);
         const kernelWeight = this.emboss.reduce((acc, val) => acc + val, 0);
         
         gl.uniform1f(kernelWeightLocation, kernelWeight)
@@ -76,33 +80,18 @@ class WebGLEmboss implements RenderFilter{
         gl.uniform1fv(kernelLocation, this.emboss);
     };
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
-        if (! this.program) throw new Error("Emboss Program failed to load");
-
-        const gl: WebGL2RenderingContext = this.wgl.gl;
-
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+        if (!this.program) throw new Error("Emboss program is not compiled");
         
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 }
 

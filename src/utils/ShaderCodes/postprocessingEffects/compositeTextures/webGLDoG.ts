@@ -4,6 +4,7 @@ import { RenderFilter } from "../webGLRenderFilter";
 import WebGLSubtract from "../nonCompositeTextures/webGLSubtract";
 import WebGLBinaryThreshold from "../nonCompositeTextures/webGLBinaryThresholding";
 import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
 
 class WebGLDoG implements RenderFilter{
     private readonly wgl : WebGLCore;
@@ -29,28 +30,21 @@ class WebGLDoG implements RenderFilter{
         this.scalar = scalar
     }
 
-    public render(inputTextures : WebGLTexture[], fboPair : FramebufferPair) : WebGLTexture {
+     public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer{
         // const gl = this.wgl.gl;
-        let fboWrite =fboPair.write();
-        let fboRead = fboPair.read();
-
         // Apply 2 gaussian blurs of varying sigmas 
         this.gaussianBlur.setAttributes(this.sigma);
         const gBlurTexture1 = this.gaussianBlur.render([inputTextures[0]], fboPair);
-        [fboWrite, fboRead] = [fboRead, fboWrite];
 
         this.gaussianBlur.setAttributes(this.sigma * this.scalar);
         const gBlurTexture2 = this.gaussianBlur.render([inputTextures[0]], fboPair);
-        [fboWrite, fboRead] = [fboRead, fboWrite];
 
         // Get the difference of the 2 gaussian blurs;
         const subtractTexture = this.subtract.render([gBlurTexture1, gBlurTexture2], fboPair);
-        [fboWrite, fboRead] = [fboRead, fboWrite];
 
         // Apply a binary threshold to extract the edges of the difference blur
         this.binaryThreshold.setAttributes(this.threshold);
         const dogTexture = this.binaryThreshold.render([subtractTexture], fboPair);
-        [fboWrite, fboRead] = [fboRead, fboWrite];
 
         return dogTexture;
     }

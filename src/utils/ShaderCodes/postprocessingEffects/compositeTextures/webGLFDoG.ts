@@ -1,26 +1,19 @@
 import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
-import WebGLEdgeBlurPass from "../nonCompositeTextures/webGLEdgeBlur";
 import WebGLETF from "./webGLETF";
 import WebGLGrayScale from "../nonCompositeTextures/webGLGrayscale";
-import WebGLStreamlineBlur from "../nonCompositeTextures/webGLStreamlineBlur";
-import WebGLTanhThreshold from "../nonCompositeTextures/WebGLTanhThreshold";
-import WebGLSubtractFDoG from "../nonCompositeTextures/webGLSubtractFDoG";
 import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
-import FramebufferPair from '../../../framebuffer_textures/framebufferPair';
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import WebGLCompileFilters from "../webGLCompileFilters";
 
 
 class WebGLFDoG implements RenderFilter{
     private static readonly SCALAR : number = 1.6; // for sigmaS according to the paper
     private readonly wgl : WebGLCore;
-    private readonly etf : WebGLETF;
-    private readonly grayScale : WebGLGrayScale;
-    private readonly edgeBlur : WebGLEdgeBlurPass;
-    private readonly subtractFDoG : WebGLSubtractFDoG;
-    private readonly  tanhThreshold : WebGLTanhThreshold;
+    private readonly compiledFilters : WebGLCompileFilters;
     private readonly framebufferPool : FramebufferPool;
-    private readonly streamlineBlur : WebGLStreamlineBlur;
 
+    private etf : WebGLETF;
     private p : number = 1.0;
     private sigmaS : number = 1.0;
     private sigmaC : number = 1.6;
@@ -29,15 +22,15 @@ class WebGLFDoG implements RenderFilter{
     private iteration : number = 0;
     private etfKernelSize : number = 3;
     
-    constructor (wgl : WebGLCore, framebufferPool: FramebufferPool) {
+    constructor (
+        wgl : WebGLCore,
+        framebufferPool: FramebufferPool,
+        compiledFilters : WebGLCompileFilters
+    ) {
         this.wgl = wgl;
-        this.etf = new WebGLETF(this.wgl);
-        this.edgeBlur = new WebGLEdgeBlurPass(this.wgl);
-        this.subtractFDoG = new WebGLSubtractFDoG(this.wgl);
-        this.streamlineBlur = new WebGLStreamlineBlur(this.wgl);
-        this.grayScale = new WebGLGrayScale(this.wgl);
-        this.tanhThreshold = new WebGLTanhThreshold(this.wgl); 
         this.framebufferPool =framebufferPool;
+        this.compiledFilters = compiledFilters;
+        this.etf = new WebGLETF(this.wgl, this.compiledFilters, this.framebufferPool);
     }
 
     public setAttributes(
@@ -56,55 +49,62 @@ class WebGLFDoG implements RenderFilter{
         this.iteration = iteration;
     }
 
-    public render(inputTextures : WebGLTexture[], fbos : FramebufferPair) : WebGLTexture{
-        let fboWrite = fbos.write();
-        const fboRead = fbos.read();
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer{
+        const w : number = textureWidth;
+        const h : number = textureHeight;
+        const gray : WebGLGrayScale = this.compiledFilters.grayScale;
+        const edgeBlur = this.compiledFilters.edgeBlurPass;
+        const subtractFDoG = this.compiledFilters.subtractFDoG;
+        const streamlineBlur = this.compiledFilters.streamlineBlur;
+        const tanhThreshold = this.compiledFilters.tanhThreshold;
+        const superImpose = this.compiledFilters.superImpose;
 
-        const grayPair = new FramebufferPair(fboWrite, fboRead);
-        const grayTexture = this.grayScale.render([inputTextures[0]], grayPair);
-        
+        const grayFbo = gray.render([inputTextures[0]], w, h);
+
         // Get the Edge Tangent Flow of the image
-        const fboETF = this.framebufferPool.acquire(fboWrite.width, fboWrite.height);
-        this.etf.setAttributes(this.etfKernelSize);
-        const pairETF = new FramebufferPair(grayPair.write(), fboETF);
-        const etfTexture = this.etf.render([grayTexture],pairETF);
-
-        const currentPair = new FramebufferPair(grayPair.write(), grayPair.read()); 
-        let currentTexture = grayTexture;
-        const fboEdgeBlur1 = this.framebufferPool.acquire(fboWrite.width, fboWrite.height);
-        const fboEdgeBlur2 = this.framebufferPool.acquire(fboWrite.width, fboWrite.height);
+        const etfFbo = this.etf.render([inputTextures[0]], w, h);
+        
+        let currentFbo = grayFbo;
         for (let i = 0; i < this.iteration; i++) {
-
             // Apply two distinct edge blurs of varying sigma sizes
-            const pairEdgeBlur1 = new FramebufferPair(pairETF.write(), fboEdgeBlur1);
-            this.edgeBlur.setAttributes(this.sigmaC);
-            const edgeBlurTexture1 = this.edgeBlur.render([grayTexture , etfTexture], pairEdgeBlur1);
-            fboWrite = pairEdgeBlur1.write();
+            edgeBlur.setAttributes(this.sigmaC);
+            const edgeBlur1Fbo = edgeBlur.render([currentFbo.getTexture() , etfFbo.getTexture()], w, h);
 
-            const pairEdgeBlur2 = new FramebufferPair(fboWrite , fboEdgeBlur2);
-            this.edgeBlur.setAttributes(this.sigmaS);
-            const edgeBlurTexture2 = this.edgeBlur.render([grayTexture , etfTexture], pairEdgeBlur2);
-            fboWrite = pairEdgeBlur2.write();
+            edgeBlur.setAttributes(this.sigmaS);
+            const edgeBlur2Fbo  = edgeBlur.render([currentFbo.getTexture() , etfFbo.getTexture()], w, h);
 
             // Get the difference of gaussian of the two blurred textures
-            const dogPair = new FramebufferPair(fboWrite, currentPair.read());
-            this.subtractFDoG.setAttributes(this.p);
-            const dogTexture = this.subtractFDoG.render([edgeBlurTexture1, edgeBlurTexture2], dogPair);
-
+            subtractFDoG.setAttributes(this.p);
+            const subtractFDoGFbo = subtractFDoG.render([edgeBlur1Fbo.getTexture(), edgeBlur2Fbo.getTexture()],  w, h);
+            // Edge Blur 1 and 2 fbos are not needed again for this iteration
+            this.framebufferPool.release(edgeBlur1Fbo); 
+            this.framebufferPool.release(edgeBlur2Fbo);
+            
             // Apply a stream aligned blur on the difference of gaussian texture
-            this.streamlineBlur.setAttributes(this.sigmaM);
-            const streamlineBlurTexture = this.streamlineBlur.render([dogTexture, etfTexture],dogPair);
+            streamlineBlur.setAttributes(this.sigmaM);
+            const streamlineBlurFbo = streamlineBlur.render([subtractFDoGFbo.getTexture(), etfFbo.getTexture()], w, h);
+            this.framebufferPool.release(subtractFDoGFbo) // subtractFDoGFbo is not needed again for this iteration
 
             // Apply a threshold to accentuate the edge lines
-            this.tanhThreshold.setAttributes(this.tau);
-            currentTexture = this.tanhThreshold.render([streamlineBlurTexture ],  dogPair);
+            tanhThreshold.setAttributes(this.tau);
+            const tanhThresholdFbo = tanhThreshold.render([streamlineBlurFbo.getTexture()], w, h);
+            this.framebufferPool.release(streamlineBlurFbo) // streamLineBlurFbo is not needed for this iteration
+            
+            if (i !== this.iteration - 1){
+                const superImposeFbo = superImpose.render([currentFbo.getTexture(), tanhThresholdFbo.getTexture()], w, h);
+                this.framebufferPool.release(tanhThresholdFbo) // tanhThresholdFbo is not needed again for this iteration
+                this.framebufferPool.release(currentFbo); // The current fbo at the start of the iteration is not in use again
+                currentFbo = superImposeFbo;
+            } else {
+                this.framebufferPool.release(currentFbo);
+                currentFbo = tanhThresholdFbo;
+            }
+            
+            
         }
+        this.framebufferPool.release(etfFbo);
 
-        this.framebufferPool.release(fboEdgeBlur1);
-        this.framebufferPool.release(fboEdgeBlur2);
-        this.framebufferPool.release(fboETF);
-
-        return currentTexture;   
+        return currentFbo;   
     }
 }
 

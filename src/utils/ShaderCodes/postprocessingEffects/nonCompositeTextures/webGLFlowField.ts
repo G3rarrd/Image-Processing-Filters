@@ -1,11 +1,14 @@
 import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
 import PostProcessingVertexShader from '../../vertexShaders/postProcessingVertexShader';
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import WebGLShaderPass from "../webGLShaderPass";
+import Framebuffer from '../../../framebuffer_textures/framebuffer';
+import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
 
 class WebGLFlowField implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool: FramebufferPool;
     private program: WebGLProgram | null = null; 
 
     /**
@@ -13,8 +16,10 @@ class WebGLFlowField implements RenderFilter {
     
     constructor (
         wgl:WebGLCore, 
+        framebufferPool : FramebufferPool
     ) {
         this.wgl = wgl;
+        this.framebufferPool = framebufferPool;
         this.postProcessing = new PostProcessingVertexShader();
     }
 
@@ -22,33 +27,19 @@ class WebGLFlowField implements RenderFilter {
         this.program = this.wgl.compileAndLinkProgram(this.postProcessing.shader, WebGLFlowField.fragmentShader, "Flow Field Shader");
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
         if (! this.program) throw new Error("Flow Field Shader is not compiled");
 
-        const gl: WebGL2RenderingContext = this.wgl.gl;
-
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
         
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
 
@@ -74,13 +65,10 @@ class WebGLFlowField implements RenderFilter {
 
     
 
-    private setUniforms = () => {
-        if (! this.program) throw new Error("Flow Field Shader is not compiled");
-
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) {
         const TEX_NUM : number = 0;
-
-        const imageLocation = gl.getUniformLocation(this.program, "u_image");
+        const U_IMAGE : string = 'u_image';
+        const imageLocation = gl.getUniformLocation(program, U_IMAGE );
 
         if (!imageLocation) throw new Error("Image cannot be found");
         gl.uniform1i(imageLocation, TEX_NUM);

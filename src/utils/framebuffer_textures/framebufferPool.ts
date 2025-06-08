@@ -1,6 +1,6 @@
 import Framebuffer from './framebuffer';
 class FramebufferPool {
-    private pool: Framebuffer[] = [];
+    public pool: Framebuffer[] = [];
     private gl : WebGL2RenderingContext;
     public inUse : Set<Framebuffer> = new Set();
     constructor (gl : WebGL2RenderingContext) {
@@ -25,15 +25,55 @@ class FramebufferPool {
         return fbo;
     }
 
+    public getRead(width : number, height : number) {
+        for (const fbo of this.pool) {
+            const fboInUse : boolean = this.inUse.has(fbo);
+            const sizeMatch : boolean = fbo.width === width && fbo.height  === height;
+            
+            if (!fboInUse && sizeMatch ) {
+                this.inUse.add(fbo);
+                return fbo;
+            }
+        }
+
+        
+        // Add a new Framebuffer if all the framebuffers in the pool are in use
+        const newFbo = new Framebuffer(this.gl, width, height);
+        this.pool.push(newFbo);
+        this.inUse.add(newFbo);
+        return newFbo;
+    }
+
+    public getWrite(width : number, height : number, inputTextures : WebGLTexture[]) {
+        for (const fbo of this.pool) {
+            const texture : WebGLTexture = fbo.getTexture();
+
+            const notInUse : boolean = ! this.inUse.has(fbo);
+            const sizeMatch : boolean = fbo.width === width && fbo.height === height;
+            const notUsedAsInput = ! inputTextures.includes(texture);
+
+            if(notInUse && sizeMatch && notUsedAsInput) {
+                this.inUse.add(fbo);
+                return fbo;
+            }
+        }
+
+        const newFbo = new Framebuffer(this.gl, width, height);
+        this.pool.push(newFbo);
+        this.inUse.add(newFbo);
+        return newFbo;
+    }
+
     public release(fbo : Framebuffer) {
         if (!this.inUse.has(fbo)) {
-            console.warn("Trying to release framebuffer that was not acquired!");
+            console.warn("Trying to release framebuffer that is not currently in use!");
             return;
         }
-        this.inUse.delete(fbo);
+        this.inUse.delete(fbo); // framebuffer is no longer needed
     }
 
     public clear () {
+        // use when a new image has been loaded
         this.inUse.clear();
         this.pool.forEach(fbo => fbo.delete()); // call gl.deleteFramebuffer etc.
         this.pool = [];

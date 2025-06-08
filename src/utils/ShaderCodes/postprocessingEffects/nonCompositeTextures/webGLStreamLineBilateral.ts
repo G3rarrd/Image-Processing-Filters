@@ -3,11 +3,14 @@ import { RenderFilter } from "../webGLRenderFilter";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
 import GaussianCalculations from '../../../math/gaussianCalculation';
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import WebGLShaderPass from "../webGLShaderPass";
+import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
 
 class WebGLStreamlineBilateral implements RenderFilter {
     private static readonly MAX_KERNEL_SIZE : number= 200;
     private readonly wgl : WebGLCore;
+    private readonly framebufferPool: FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;
     private readonly gaussianCalc : GaussianCalculations;
     
@@ -25,10 +28,11 @@ class WebGLStreamlineBilateral implements RenderFilter {
 
     constructor (
         wgl:WebGLCore, 
-
+        framebufferPool: FramebufferPool,
     ) {
         this.wgl = wgl;
-        this.postProcessing = new PostProcessingVertexShader()
+        this.postProcessing = new PostProcessingVertexShader();
+        this.framebufferPool = framebufferPool;
         this.gaussianCalc = new GaussianCalculations();
     }
 
@@ -43,38 +47,20 @@ class WebGLStreamlineBilateral implements RenderFilter {
         this.kernel1D = this.gaussianCalc.get1DGaussianKernel(this.kernelSize, this.sigmaE);
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
-        if (!this.program) throw new Error("Streamline Bilateral is not compiled");
-
-        const gl: WebGL2RenderingContext = this.wgl.gl;
-
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+        if (!this.program) throw new Error("Streamline Bilateral program is not compiled");
         
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
-    private setUniforms () : void {
-        if (!this.program) throw new Error("Streamline Bilateral is not compiled");
-
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         const TEX_NUM_1 : number  = 0;
         const TEX_NUM_2 : number = 1;
 
@@ -86,11 +72,11 @@ class WebGLStreamlineBilateral implements RenderFilter {
 
         const KERNEL_SIZE : number = this.kernel1D.length;
 
-        const dogLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_IMAGE);
-        const etfLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_ETF);
-        const kernelSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_KERNEL_SIZE);
-        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_KERNEL);
-        const sigmaRangeLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_SIGMA_RANGE);
+        const dogLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE);
+        const etfLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_ETF);
+        const kernelSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL_SIZE);
+        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL);
+        const sigmaRangeLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_SIGMA_RANGE);
 
         if (!kernelLocation) throw new Error(setUniformLocationError(U_KERNEL));
         if (!dogLocation) throw new Error(setUniformLocationError(U_IMAGE));

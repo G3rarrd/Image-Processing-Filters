@@ -1,9 +1,7 @@
-import Framebuffer from "../framebuffer_textures/framebuffer";
 import WebGLCore from "../webGLCore";
 import { RenderFilter } from '../ShaderCodes/postprocessingEffects/webGLRenderFilter';
-import FramebufferPair from "../framebuffer_textures/framebufferPair";
 import FramebufferPool from '../framebuffer_textures/framebufferPool';
-
+import WebGLHistoryStack from "./webGLHistoryStack";
 
 
 class WebGLRenderPipeline {
@@ -12,11 +10,13 @@ class WebGLRenderPipeline {
     private img : HTMLImageElement;
     public currentTex : WebGLTexture | null = null;
     private framebufferPool : FramebufferPool; 
+    private historyStack : WebGLHistoryStack;
 
-    constructor(wgl : WebGLCore, img : HTMLImageElement, framebufferPool: FramebufferPool) {
+    constructor(wgl : WebGLCore, img : HTMLImageElement, framebufferPool: FramebufferPool, historyStack : WebGLHistoryStack) {
         this.wgl = wgl;
         this.img = img;
         this.framebufferPool = framebufferPool;
+        this.historyStack = historyStack;
 
 
         // if (!this.wgl || !this.wgl.gl) return;
@@ -51,23 +51,28 @@ class WebGLRenderPipeline {
         if (this.pipeline.length === 0) return ;
         const gl = this.wgl.gl;
         if (! gl ) throw new Error("WebGL context is null");
-
-        const fboWrite = this.framebufferPool.acquire(this.img.width, this.img.height, this.currentTex);
-        const fboRead = this.framebufferPool.acquire(this.img.width, this.img.height, this.currentTex);
-        
+        let fbo;
         // Risk :  Possible error may occur
         try {
-            const fboPair = new FramebufferPair(fboWrite, fboRead);
+            
             for (const filter of this.pipeline) {
+                
                 if (!this.currentTex) break;
-                this.currentTex = filter.render([this.currentTex], fboPair);
+                
+                fbo = filter.render([this.currentTex], this.img.naturalWidth, this.img.naturalHeight);
+                this.currentTex = fbo.getTexture();
             }
+
         // Always run the below code regardless of the state of the outcomes in the loop 
         // (an error occurs, rendering completed, return is called early)
         // Ensures the pipeline state is always reset
-        } finally {
-            this.framebufferPool.release(fboWrite);
-            this.framebufferPool.release(fboRead);
+
+        }finally {
+
+            if (this.currentTex) this.historyStack.add(this.currentTex);
+            if (fbo)
+            this.framebufferPool.release(fbo);
+            console.log(this.framebufferPool.inUse.size)
             this.clearPipeline();
         }
     }

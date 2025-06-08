@@ -1,15 +1,22 @@
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
 import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { RenderFilter } from "../webGLRenderFilter";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
+import WebGLShaderPass from "../webGLShaderPass";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 
 class WebGLSuperImpose implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool: FramebufferPool;
     private program : WebGLProgram | null = null;
-    constructor (wgl: WebGLCore) {
+    constructor (
+        wgl: WebGLCore,
+        framebufferPool: FramebufferPool
+    ) {
         this.wgl = wgl;
+        this.framebufferPool = framebufferPool;
         this.postProcessing = new PostProcessingVertexShader();
     }
 
@@ -17,18 +24,15 @@ class WebGLSuperImpose implements RenderFilter {
         this.program = this.wgl.compileAndLinkProgram(this.postProcessing.shader, WebGLSuperImpose.fragmentShader, "Super Impose Shader");
     }
 
-    private setUniforms()  {
-        if (!this.program) throw new Error("Super Impose Program is not compiled");
-
-        const gl  = this.wgl.gl;
+    private setUniforms(gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         const TEX_NUM : number = 0;
         const TEX_NUM_1 : number = 1;
 
         const U_IMAGE : string = 'u_image';
         const U_FDoG : string = 'u_fdog';
 
-        const imageLocation1 = gl.getUniformLocation(this.program, U_IMAGE);
-        const imageLocation2 = gl.getUniformLocation(this.program, U_FDoG);
+        const imageLocation1 = gl.getUniformLocation(program, U_IMAGE);
+        const imageLocation2 = gl.getUniformLocation(program, U_FDoG);
 
         if (!imageLocation1) throw new Error(setUniformLocationError(U_IMAGE))
         if (!imageLocation2) throw new Error(setUniformLocationError(U_FDoG))
@@ -37,33 +41,27 @@ class WebGLSuperImpose implements RenderFilter {
         gl.uniform1i(imageLocation2, TEX_NUM_1);
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer {
+        /**
+         * Uses 2 Textures
+         * 
+         * @param inputTextures[0] should be the image texture
+         * @param inputTextures[1] should be fdog texture result
+         * 
+         * */ 
+        
         if (!this.program) throw new Error("Super Impose Program is not compiled");
 
-        const gl: WebGL2RenderingContext = this.wgl.gl;
-
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
         
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
     private static readonly fragmentShader = 

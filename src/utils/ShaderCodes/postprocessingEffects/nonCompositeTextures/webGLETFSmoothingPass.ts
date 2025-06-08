@@ -2,21 +2,26 @@ import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import WebGLShaderPass from "../webGLShaderPass";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
 class WebGLETFSmoothingPass implements RenderFilter {
     private readonly  wgl : WebGLCore;
     private readonly  postProcessing : PostProcessingVertexShader;
-    private readonly minMagnitude : number = 0;
-    private readonly maxMagnitude : number = 1;
+    private readonly  framebufferPool : FramebufferPool;
+    private minMagnitude : number = 0;
+    private maxMagnitude : number = 1;
     private program: WebGLProgram | null = null; 
     private direction: [number, number] = [0, 1];
     private kernelSize : number = 3;
     
     constructor (
         wgl:WebGLCore, 
+        framebufferPool : FramebufferPool
     ) {
         this.wgl = wgl;
-        this.postProcessing = new PostProcessingVertexShader()
+        this.postProcessing = new PostProcessingVertexShader();
+        this.framebufferPool = framebufferPool;
     }
 
     public init() {
@@ -28,38 +33,22 @@ class WebGLETFSmoothingPass implements RenderFilter {
         this.kernelSize = kernelSize;
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
         if (!this.program) throw new Error("ETF Smoothing X Pass program is not compiled");
-        
-        const gl: WebGL2RenderingContext = this.wgl.gl;
 
-        fboPair.write().bind();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, inputTextures[0]);
-
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
     
-    private setUniforms () : void {
-        if (!this.program) throw new Error("ETF Smoothing X Pass program is not compiled");
-
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         const TEX_NUM = 0;
 
         const U_DIRECTION : string = 'u_direction';
@@ -68,11 +57,11 @@ class WebGLETFSmoothingPass implements RenderFilter {
         const U_IMAGE : string = 'u_image';
         const U_KERNEL_SIZE : string = 'u_kernel_size'
 
-        const imageLocation = gl.getUniformLocation(this.program, U_IMAGE);
-        const maxMagLocation = gl.getUniformLocation(this.program, U_MAX_MAG);
-        const minMagLocation = gl.getUniformLocation(this.program, U_MIN_MAG);
-        const kernelSizeLocation = gl.getUniformLocation(this.program, U_KERNEL_SIZE);
-        const directionLocation = gl.getUniformLocation(this.program, U_DIRECTION);
+        const imageLocation = gl.getUniformLocation(program, U_IMAGE);
+        const maxMagLocation = gl.getUniformLocation(program, U_MAX_MAG);
+        const minMagLocation = gl.getUniformLocation(program, U_MIN_MAG);
+        const kernelSizeLocation = gl.getUniformLocation(program, U_KERNEL_SIZE);
+        const directionLocation = gl.getUniformLocation(program, U_DIRECTION);
 
         
         if (!minMagLocation) throw new Error(setUniformLocationError(U_MIN_MAG));

@@ -1,19 +1,25 @@
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
 import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from '../../vertexShaders/postProcessingVertexShader';
 import { RenderFilter } from "../webGLRenderFilter";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
+import WebGLShaderPass from "../webGLShaderPass";
+import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
 
 class WebGLTanhThreshold implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool: FramebufferPool;
     private program : WebGLProgram | null = null;
     private tau: number = 1.0;
 
-    constructor(wgl : WebGLCore) {
+    constructor(
+        wgl : WebGLCore,
+        framebufferPool : FramebufferPool
+    ) {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
-
+        this.framebufferPool = framebufferPool;
     }
 
     public init(): void {
@@ -24,44 +30,29 @@ class WebGLTanhThreshold implements RenderFilter {
         this.tau = tau;
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer {
+        /* Uses 1 texture */ 
         if (! this.program) throw new Error("Tanh Threshold program is not compiled");
 
-        const gl: WebGL2RenderingContext = this.wgl.gl;
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, inputTextures[0]);
-
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
-    private setUniforms() {
-        if (! this.program) throw new Error("Tanh Threshold program is not compiled");
-
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms(gl: WebGL2RenderingContext, program: WebGLProgram) {
         const TEX_NUM : number = 0;
         
         const U_DoG : string = 'u_dog';
         const U_TAU : string = 'u_tau';
 
-        const dogLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_DoG);
-        const tauLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program,U_TAU);
+        const dogLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_DoG);
+        const tauLocation : WebGLUniformLocation | null = gl.getUniformLocation(program,U_TAU);
 
         if (! dogLocation) throw new Error(setUniformLocationError(U_DoG));
         if (! tauLocation) throw new Error(setUniformLocationError(U_TAU));

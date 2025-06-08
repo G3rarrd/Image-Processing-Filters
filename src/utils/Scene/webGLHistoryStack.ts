@@ -5,12 +5,11 @@ class WebGLHistoryStack {
     private undoStack : WebGLTexture[] = [];
     private readonly wgl : WebGLCore;
 
-    constructor (wgl : WebGLCore, initialTexture : WebGLTexture) {
+    constructor (wgl : WebGLCore) {
         this.wgl = wgl;
-        this.undoStack.push(initialTexture);
     }
     
-    public push(texture : WebGLTexture) : void{
+    public add(texture : WebGLTexture) : void{
         const gl = this.wgl.gl;
         this.undoStack.push(texture);
 
@@ -31,7 +30,7 @@ class WebGLHistoryStack {
         return this.getUndoStackTop();
     }
 
-    public undo() : WebGLTexture | undefined{
+    public undo() : void{
         if (this.isUndoStackEmpty()) return;
 
         const prevTexture : WebGLTexture | undefined = this.undoStack.pop();
@@ -39,14 +38,13 @@ class WebGLHistoryStack {
         if (!prevTexture) return;
 
         this.redoStack.push(prevTexture);
+    }
 
+    public getTexture() : WebGLTexture {
         return this.getUndoStackTop();
     }
 
     public getUndoStackTop() : WebGLTexture {
-        if (this.isUndoStackEmpty() ) {
-            throw new Error("Undo stack is empty");
-        }
         return this.undoStack[this.undoStack.length - 1];
     }
 

@@ -1,47 +1,54 @@
 import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
-import WebGLEigenvector from "../nonCompositeTextures/webGLEigenvector";
-import WebGLGaussianBlur from "./webGLGaussianBlur";
-import WebGLStructuredTensor from "../nonCompositeTextures/webGLStructuredTensor";
-import FramebufferPair from '../../../framebuffer_textures/framebufferPair';
+import WebGLGaussianBlur from './webGLGaussianBlur';
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import WebGLCompileFilters from "../webGLCompileFilters";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 
 
 class WebGLETFEigenvector implements RenderFilter{
     private readonly wgl : WebGLCore;
+    private readonly compiledFilters : WebGLCompileFilters;
+    private readonly framebufferPool: FramebufferPool;
+    private readonly gBlur : WebGLGaussianBlur;
     private sigmaC : number = 1.6;
-    private gBlur : WebGLGaussianBlur;
-    private structuredTensor : WebGLStructuredTensor;
-    private eigenvector:WebGLEigenvector;
     
-    constructor (wgl:WebGLCore) {
+    constructor (
+        wgl:WebGLCore,
+        compiledFilters : WebGLCompileFilters,
+        framebufferPool: FramebufferPool
+
+    ) {
         this.wgl = wgl;
-        this.gBlur = new WebGLGaussianBlur(this.wgl);
-        this.eigenvector = new WebGLEigenvector(this.wgl);
-        this.structuredTensor = new WebGLStructuredTensor(this.wgl);
+        this.framebufferPool = framebufferPool;
+        this.compiledFilters = compiledFilters;
+        this.gBlur = new WebGLGaussianBlur(this.wgl, this.compiledFilters, this.framebufferPool);
     }
 
     public setAttributes (sigmaC : number) {
         this.sigmaC = sigmaC;
     }
     
-    public render(inputTextures : WebGLTexture[], fboPair : FramebufferPair) : WebGLTexture {
-        // const gl = this.wgl.gl;
-        let fboWrite = fboPair.write();
-        let fboA = fboPair.read();
-
-        const pairA = new FramebufferPair(fboWrite, fboA);
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer{
         // Step One: Create the Structured Tensor
-        const structuredTensorTexture = this.structuredTensor.render([inputTextures[0]], pairA);
+        const w : number = textureWidth;
+        const h : number = textureHeight;
+        const structuredTensor = this.compiledFilters.structuredTensor;
+        const eigenvector = this.compiledFilters.eigenvector;
+        const gBlur = this.gBlur;
+        
+        const structuredTensorFbo = structuredTensor.render([inputTextures[0]], w, h);
 
         // Step two: Blur the Structured Tensor 
-        this.gBlur.setAttributes(this.sigmaC);
-        const blurStructuredTensorTexture = this.gBlur.render([structuredTensorTexture], pairA);
+        gBlur.setAttributes(this.sigmaC);
+        const blurStructuredTensorFbo = gBlur.render([structuredTensorFbo.getTexture()], w, h);
+        this.framebufferPool.release(structuredTensorFbo) // structuredTensorFbo is no longer needed
 
         // Step three: Get the eigenvalue of the structured tensor to get the edge tangent flow
-        const etfTexture = this.eigenvector.render([blurStructuredTensorTexture], pairA);
-        [fboWrite, fboA] = [fboA, fboWrite];
-
-        return etfTexture;
+        const etfFbo = eigenvector.render([blurStructuredTensorFbo.getTexture()], w, h);
+        this.framebufferPool.release(blurStructuredTensorFbo) // blurStructuredTensorFbo is no longer needed
+        
+        return etfFbo;
     }
 }
 

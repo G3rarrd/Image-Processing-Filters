@@ -3,14 +3,17 @@ import { RenderFilter } from "../webGLRenderFilter";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
 import GaussianCalculations from '../../../math/gaussianCalculation';
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import WebGLShaderPass from "../webGLShaderPass";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
 
 class WebGLStreamlineBlur implements RenderFilter {
     private static readonly MAX_KERNEL_SIZE : number= 200;
-    private program: WebGLProgram | null = null; 
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
     private readonly gaussianCalc : GaussianCalculations;
+    private readonly framebufferPool: FramebufferPool;
+    private program: WebGLProgram | null = null; 
     private sigmaM : number = 1.0;
     private kernel1D : number[] = [0, 1, 0];
     public kernelSize : number = 3;
@@ -19,10 +22,12 @@ class WebGLStreamlineBlur implements RenderFilter {
 
     constructor (
         wgl:WebGLCore, 
+        framebufferPool: FramebufferPool
     ) {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
         this.gaussianCalc = new GaussianCalculations();
+        this.framebufferPool = framebufferPool;
     }
 
     public init() : void {
@@ -35,37 +40,22 @@ class WebGLStreamlineBlur implements RenderFilter {
         this.kernel1D = this.gaussianCalc.get1DGaussianKernel(this.kernelSize, this.sigmaM);
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
         if (! this.program) throw new Error("Streamline blur program is not compiled");
-        const gl: WebGL2RenderingContext = this.wgl.gl;
-
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
         
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
-    private setUniforms () : void {
-        if (! this.program) throw new Error("Streamline blur program is not compiled");
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
+        
 
         const TEX_NUM_1 = 0;
         const TEX_NUM_2 = 1;
@@ -77,10 +67,10 @@ class WebGLStreamlineBlur implements RenderFilter {
 
         const KERNEL_SIZE : number = this.kernel1D.length;
 
-        const dogLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_DoG);
-        const etfLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_ETF);
-        const kernelSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_KERNEL_SIZE);
-        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_KERNEL);
+        const dogLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_DoG);
+        const etfLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_ETF);
+        const kernelSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL_SIZE);
+        const kernelLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL);
         
         if (!kernelLocation) throw new Error(setUniformLocationError(U_KERNEL));
         if (!dogLocation) throw new Error(setUniformLocationError(U_DoG));

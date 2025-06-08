@@ -2,11 +2,14 @@ import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import WebGLShaderPass from "../webGLShaderPass";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 
 class WebGLPixelize implements RenderFilter {
     private program: WebGLProgram|null = null; 
     private readonly wgl : WebGLCore;
+    private readonly framebufferPool : FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;
     private  blockSize : number = 1;
     
@@ -15,10 +18,11 @@ class WebGLPixelize implements RenderFilter {
     */
     constructor (
         wgl:WebGLCore, 
+        framebufferPool : FramebufferPool
     ) {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
-        
+        this.framebufferPool = framebufferPool;   
     }
 
     public init() {
@@ -29,50 +33,26 @@ class WebGLPixelize implements RenderFilter {
         this.blockSize = blockSize;
     }
 
-    public render(inputTextures: WebGLTexture[], fboPair: FramebufferPair) : WebGLTexture {
-        /* Uses only one texture */ 
-        if (! this.program) throw new Error("Pixelize program is not compiled");
-        const gl: WebGL2RenderingContext = this.wgl.gl;
-
-        fboPair.write().bind();
-
-        this.wgl.clearCanvas(); // Clear the framebuffer
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
-        }
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+        if (!this.program) throw new Error("Pixelize program is not compiled");
         
-        this.postProcessing.setGlobalUniforms(gl, this.program,fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
-    
-
-    private setUniforms () : void {
-        if (! this.program) throw new Error("Pixelize program is not compiled");
-        
-        const gl : WebGL2RenderingContext = this.wgl.gl;
-
+    private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         const U_IMAGE : string = 'u_image';
         const U_BLOCK_SIZE : string = 'u_block_size';
 
-        const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, U_IMAGE);
-        const blockSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(
-            this.program,
-            U_BLOCK_SIZE
-        );
+        const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE);
+        const blockSizeLocation: WebGLUniformLocation | null = gl.getUniformLocation(program,U_BLOCK_SIZE);
         
         if (!imageLocation) throw new Error(setUniformLocationError(U_IMAGE));
         if (!blockSizeLocation) throw new Error(setUniformLocationError(U_BLOCK_SIZE));

@@ -1,16 +1,23 @@
-import FramebufferPair from "../../../framebuffer_textures/framebufferPair";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from '../../vertexShaders/postProcessingVertexShader';
+import WebGLShaderPass from "../webGLShaderPass";
 import { RenderFilter } from "../webGLRenderFilter";
 
 class WebGLBinaryThreshold implements RenderFilter {
-    private wgl : WebGLCore;
+    private readonly wgl : WebGLCore;
+    private readonly postProcessing : PostProcessingVertexShader;
+    private readonly framebufferPool: FramebufferPool;
     private program : WebGLProgram | null = null;
-    private postProcessing : PostProcessingVertexShader;
     private threshold : number =0.01;
-    constructor(wgl : WebGLCore) {
+    constructor(
+        wgl : WebGLCore,
+        framebufferPool: FramebufferPool
+    ) {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
+        this.framebufferPool = framebufferPool;
     }
 
     public init() {
@@ -21,40 +28,26 @@ class WebGLBinaryThreshold implements RenderFilter {
         this.threshold = threshold;
     }
 
-    public render(inputTextures  : WebGLTexture[], fboPair : FramebufferPair) {
-        if (!this.program) throw new Error("Grayscale program is not compiled");
-
-        const gl : WebGL2RenderingContext = this.wgl.gl;
-        fboPair.write().bind();
-
-
-        this.wgl.clearCanvas(); // removes the previous image on the canvas
-
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.wgl.vao);
-            
-        gl.activeTexture(gl.TEXTURE0 + 0);
-        gl.bindTexture(gl.TEXTURE_2D, inputTextures[0]);
-
-        this.postProcessing.setGlobalUniforms(gl, this.program, fboPair.write().width, fboPair.write().height);
-        this.setUniforms();
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+        if (!this.program) throw new Error("Binary Threshold program is not compiled");
         
-        gl.drawArrays(gl.TRIANGLES, 0, 6); // To draw texture to framebuffer
-        gl.bindVertexArray(null);
-        gl.useProgram(null);
-        fboPair.write().unbind();
+        const pass = new WebGLShaderPass(
+            this.wgl, 
+            this.program, 
+            this.framebufferPool,
+            this.postProcessing,
+            (gl, program) => this.setUniforms(gl, program),
+        )
 
-        fboPair.swap()
-        return fboPair.read().getTexture();
+        return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
-    private setUniforms() {
-        if (!this.program) throw new Error("Grayscale program is not compiled");
-
-        const gl : WebGL2RenderingContext = this.wgl.gl;
+    private setUniforms(gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         const TEX_NUM : number = 0;
-        const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, "u_image");
-        const thresholdLocation : WebGLUniformLocation | null = gl.getUniformLocation(this.program, "threshold");
+        const U_IMAGE : string =  "u_image";
+        const U_THRESHOLD : string = "threshold";
+        const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(program,U_IMAGE);
+        const thresholdLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_THRESHOLD);
 
         if (! imageLocation) throw new Error("Image cannot be found");
         if (! thresholdLocation) throw new Error("Threshold not found");
