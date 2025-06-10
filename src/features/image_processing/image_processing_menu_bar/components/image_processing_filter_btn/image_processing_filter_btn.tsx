@@ -12,6 +12,7 @@ import useBinaryThreshold from './hooks/useBinaryThreshold';
 import usePixelize from './hooks/usePixelize';
 import useGaussianBlur from './hooks/useGaussianBlur';
 import useXDoG from './hooks/useXDoG';
+import useFDoG from './hooks/useFDoG';
 
 const ImageProcessingFilterBtn = () => {
     const dropdownRef = useRef<HTMLButtonElement | null>(null);
@@ -34,6 +35,7 @@ const ImageProcessingFilterBtn = () => {
     const {handlePixelizeClick} = usePixelize();
     const {handleGaussianBlurClick} = useGaussianBlur();
     const {handleXDoGClick} = useXDoG();
+    const {handleFDoGClick} = useFDoG();
 
     function handleClick () {
         setOpen(prev => !prev);
@@ -55,6 +57,7 @@ const ImageProcessingFilterBtn = () => {
                 <li onClick={handlePixelizeClick}>Pixelize</li>
                 <li onClick={handleGaussianBlurClick}>Gaussian Blur</li>
                 <li onClick={handleXDoGClick}>XDoG</li>
+                <li onClick={handleFDoGClick}>FDoG</li>
             </ul>
         </div>
     )
