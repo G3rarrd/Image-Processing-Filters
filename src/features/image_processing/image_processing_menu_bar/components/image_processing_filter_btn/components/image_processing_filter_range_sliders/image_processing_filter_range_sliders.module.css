@@ -1,0 +1,14 @@
+.range_slider_container {
+    position: relative;
+    display : flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: red;
+    width: 100%;
+}
+
+.slider{
+    background-color: green;
+    width: 97%;
+}

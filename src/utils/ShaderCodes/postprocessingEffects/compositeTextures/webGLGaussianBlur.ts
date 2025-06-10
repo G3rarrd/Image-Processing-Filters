@@ -4,6 +4,7 @@ import { RenderFilter } from "../webGLRenderFilter";
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
 import WebGLCompileFilters from "../webGLCompileFilters";
 import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
+import { RangeSlidersProps } from "../../../../types/slider";
 
 class WebGLGaussianBlur implements RenderFilter{
     private readonly wgl : WebGLCore;
@@ -13,6 +14,7 @@ class WebGLGaussianBlur implements RenderFilter{
     private kernelSize : number = 3;
     private gaussianCalc : GaussianCalculations;
     private kernel1D : number[] = [0, 1, 0];
+    public config : RangeSlidersProps[];
 
     constructor (
         wgl:WebGLCore,
@@ -23,6 +25,13 @@ class WebGLGaussianBlur implements RenderFilter{
         this.framebufferPool = framebufferPool;
         this.gaussianCalc = new GaussianCalculations();
         this.compiledFilters = compiledFilters;
+        this.config = [{
+            min: 0.1,
+            max: 60,
+            step : 0.001,
+            value: this.sigma,
+            label: "Radius"
+        }];
     }
 
     public setAttributes(sigma : number) {

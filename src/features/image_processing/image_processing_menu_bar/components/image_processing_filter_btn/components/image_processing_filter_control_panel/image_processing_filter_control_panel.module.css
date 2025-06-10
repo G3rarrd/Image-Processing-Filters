@@ -1,0 +1,8 @@
+.filter_control_panel_container {
+    position : absolute;
+    width: 20rem;
+    background-color: violet;
+    top : 0;
+    left : 2.5rem;
+    z-index: 1;
+}

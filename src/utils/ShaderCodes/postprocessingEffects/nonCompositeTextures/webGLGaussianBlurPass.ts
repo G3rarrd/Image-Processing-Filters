@@ -90,7 +90,7 @@ class WebGLGaussianBlurPass implements RenderFilter {
     `#version 300 es
     precision mediump float;
 
-    #define MAX_KERNEL_SIZE 200
+    #define MAX_KERNEL_SIZE 1000
 
     uniform sampler2D u_image; // Our texture
     uniform int u_kernel_size; // The Kernel Size

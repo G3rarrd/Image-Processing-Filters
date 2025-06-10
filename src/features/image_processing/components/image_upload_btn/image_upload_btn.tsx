@@ -3,7 +3,7 @@ import { ImageProcessingContext } from "../image_processing_context/image_proces
 
 import './image_upload_btn.css';
 
-const ImageUploadBtn = () => {
+function ImageUploadBtn (){
     const {handleImageUpload} = useContext(ImageProcessingContext);
 
     const fileInputRef = useRef<HTMLInputElement>(null);

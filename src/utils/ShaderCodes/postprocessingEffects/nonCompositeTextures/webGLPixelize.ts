@@ -5,17 +5,20 @@ import { setUniformLocationError } from "../webGLGetUniformErrorText";
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
 import WebGLShaderPass from "../webGLShaderPass";
 import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
+import { RangeSlidersProps } from "../../../../types/slider";
 
 class WebGLPixelize implements RenderFilter {
     private program: WebGLProgram|null = null; 
     private readonly wgl : WebGLCore;
     private readonly framebufferPool : FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;
-    private  blockSize : number = 1;
+    private  blockSize : number = 10;
+    public config : RangeSlidersProps[];
     
     /** 
     *  
     */
+
     constructor (
         wgl:WebGLCore, 
         framebufferPool : FramebufferPool
@@ -23,6 +26,13 @@ class WebGLPixelize implements RenderFilter {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
         this.framebufferPool = framebufferPool;   
+        this.config = [{
+            min: 1,
+            max: 1000,
+            step : 1,
+            value: this.blockSize,
+            label: "Block Size"
+        }];
     }
 
     public init() {

@@ -5,7 +5,7 @@ import ImageUploadBtn from "../../../image_upload_btn/image_upload_btn";
 import ImageDownloadBtn from "../../../image_download_btn/image_download_btn";
 import './image_processing_upload_area.css';
 
-const ImageUploadArea = () => {
+function ImageUploadArea () {
     const {src, imageError, setSrc, handleImageUpload} = useContext(ImageProcessingContext);
     const fileInputRef = useRef<HTMLInputElement>(null);
     

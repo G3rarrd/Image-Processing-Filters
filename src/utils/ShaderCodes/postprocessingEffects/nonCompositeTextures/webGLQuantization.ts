@@ -5,13 +5,15 @@ import { setUniformLocationError } from "../webGLGetUniformErrorText";
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
 import WebGLShaderPass from "../webGLShaderPass";
 import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
+import type { RangeSlidersProps } from "../../../../types/slider";
 
 class WebGLQuantization implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly framebufferPool: FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;
     private program: WebGLProgram | null = null; 
-    private colorCount = 2;
+    private colorCount : number = 2;
+    public config : RangeSlidersProps[];
     /** 
     */
     constructor (wgl : WebGLCore, framebufferPool: FramebufferPool) 
@@ -19,6 +21,13 @@ class WebGLQuantization implements RenderFilter {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
         this.framebufferPool = framebufferPool;
+        this.config = [{
+            min: 2,
+            max: 255,
+            step : 1,
+            value: this.colorCount,
+            label: "Color Count"
+        }];
     }
 
     public init(){

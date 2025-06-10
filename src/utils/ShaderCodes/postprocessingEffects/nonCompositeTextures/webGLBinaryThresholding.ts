@@ -4,13 +4,16 @@ import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from '../../vertexShaders/postProcessingVertexShader';
 import WebGLShaderPass from "../webGLShaderPass";
 import { RenderFilter } from "../webGLRenderFilter";
+import { RangeSlidersProps } from "../../../../types/slider";
 
 class WebGLBinaryThreshold implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly postProcessing : PostProcessingVertexShader;
     private readonly framebufferPool: FramebufferPool;
     private program : WebGLProgram | null = null;
-    private threshold : number =0.01;
+    private threshold : number =0.5;
+    public config : RangeSlidersProps[];
+
     constructor(
         wgl : WebGLCore,
         framebufferPool: FramebufferPool
@@ -18,6 +21,13 @@ class WebGLBinaryThreshold implements RenderFilter {
         this.wgl = wgl;
         this.postProcessing = new PostProcessingVertexShader();
         this.framebufferPool = framebufferPool;
+        this.config = [{
+            min: 0,
+            max: 1,
+            step : 0.0001,
+            value: this.threshold,
+            label: "Threshold"
+        }];
     }
 
     public init() {

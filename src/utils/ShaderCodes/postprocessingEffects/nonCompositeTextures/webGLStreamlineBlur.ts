@@ -94,11 +94,13 @@ class WebGLStreamlineBlur implements RenderFilter {
     private static readonly fragmentShader: string = 
         `#version 300 es
         precision mediump float;
+        
+        #define MAX_KERNEL_SIZE 1000
 
         uniform sampler2D u_dog; // Our edge Difference of Gaussian
         uniform sampler2D u_etf; // Edge Tangent Flow
         uniform int u_kernel_size; // Kernel Size
-        uniform float u_kernel[200]; // kernel array with a max size of 200
+        uniform float u_kernel[MAX_KERNEL_SIZE]; // kernel array with a max size of 1000
 
         in vec2 v_texCoord;
 

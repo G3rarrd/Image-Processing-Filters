@@ -69,10 +69,13 @@ class WebGLRenderPipeline {
 
         }finally {
 
-            if (this.currentTex) this.historyStack.add(this.currentTex);
             if (fbo)
             this.framebufferPool.release(fbo);
-            console.log(this.framebufferPool.inUse.size)
+
+            if (this.framebufferPool.inUse.size > 0) {
+                console.warn(this.framebufferPool.inUse.size + "framebuffers are currently in use. Check the pipeline");
+            }
+            
             this.clearPipeline();
         }
     }

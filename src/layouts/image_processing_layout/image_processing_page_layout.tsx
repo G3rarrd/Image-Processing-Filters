@@ -1,7 +1,5 @@
 import React, { ReactNode } from "react";
-
 import styles from './image_processing_page_layout.module.css';
-import ImageProcessingMenuBar from "../../features/image_processing/image_processing_menu_bar/components/image_processing_menu_bar";
 
 const ImageProcessingPageLayout : React.FC<{children : ReactNode}> = ({children}) => {
     return (

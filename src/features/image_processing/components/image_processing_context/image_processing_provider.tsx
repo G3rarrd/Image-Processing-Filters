@@ -4,15 +4,20 @@ import { createContext, useState, ReactNode, useRef} from 'react';
 
 import WebGLImageExporter from '../../../../utils/webGLImageExporter';
 import WebGLRenderer from '../../../../utils/Scene/webGLRender';
+import { RangeSlidersProps } from '../../../../types/slider';
 
 export const ImageProcessingContext = createContext<ImageProcessingContextProps>(defaultValue);
 
 export const ImageProcessingProvider : React.FC<{children : ReactNode}> = ({children}) => {
     const [src, setSrc] = useState<string | undefined>(defaultValue.src);
+    const [openFilterControl,setOpenFilterControl] = useState<boolean>(false);
     const [imageError, setImageError] = useState<string | null>(null);
+    const [sliderConfigs, setSliderConfigs] = useState<RangeSlidersProps[]>([]);
+
     const glCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const rendererRef = useRef<WebGLRenderer | null>(null);
     
+    const filterFuncRef = useRef<(configs: RangeSlidersProps[]) => void>(() => {});
     const handleImageUpload = ( e : React.ChangeEvent<HTMLInputElement>) : void => {
                 if (e.target.files && e.target.files.length > 0) {
                     const url = URL.createObjectURL(e.target.files![0]);
@@ -37,7 +42,26 @@ export const ImageProcessingProvider : React.FC<{children : ReactNode}> = ({chil
     }
 
 
-    const providerValue = {setSrc, src, imageError, setImageError, handleImageUpload, downloadWebGL, glCanvasRef, rendererRef};
+    const providerValue = {
+        setSrc, 
+        src,
+
+        openFilterControl,
+        setOpenFilterControl,
+
+        sliderConfigs,
+        setSliderConfigs,
+
+        imageError, 
+        setImageError, 
+
+        handleImageUpload, 
+        downloadWebGL, 
+
+        glCanvasRef, 
+        rendererRef,
+        filterFuncRef,
+    };
     
     return (
         <ImageProcessingContext.Provider value={providerValue}>

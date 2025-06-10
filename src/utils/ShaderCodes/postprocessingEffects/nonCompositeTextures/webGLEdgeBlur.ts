@@ -18,6 +18,7 @@ class WebGLEdgeBlurPass implements RenderFilter {
     private gaussianCalc : GaussianCalculations;
     public kernelSize : number = 3;
     /**
+     * 
     */
 
     constructor (
@@ -93,11 +94,13 @@ class WebGLEdgeBlurPass implements RenderFilter {
         `#version 300 es
         precision mediump float;
 
+        #define MAX_KERNEL_SIZE 1000
+
         uniform float u_p; // Scalar number
         uniform sampler2D u_image; // Our texture
         uniform sampler2D u_etf; // Edge Tangent Flow
         uniform int u_kernel_size; // Kernel Size
-        uniform float u_kernel[200]; // kernel array with a max size of 100
+        uniform float u_kernel[MAX_KERNEL_SIZE]; // kernel array with a max size of 1000
 
         in vec2 v_texCoord;
 

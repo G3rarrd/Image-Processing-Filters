@@ -5,7 +5,7 @@ import WebGLEmboss from "../../../../../../utils/ShaderCodes/postprocessingEffec
 function useEmboss() {
     const {rendererRef} = useContext(ImageProcessingContext);
 
-    function handleEmboss () {
+    function handleEmbossClick () {
         if (! rendererRef || ! rendererRef.current) return;
 
         const emboss : WebGLEmboss = rendererRef.current.compiledFilters.emboss;
@@ -15,7 +15,7 @@ function useEmboss() {
         rendererRef.current.renderScene();
     }
 
-    return {handleEmboss};
+    return { handleEmbossClick};
 }
 
 export default useEmboss;

@@ -5,6 +5,7 @@ import { setUniformLocationError } from "../webGLGetUniformErrorText";
 import WebGLShaderPass from "../webGLShaderPass";
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
 import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
+import { RangeSlidersProps } from "../../../../types/slider";
 
 class WebGLDithering implements RenderFilter {
     private readonly wgl : WebGLCore;
@@ -12,25 +13,28 @@ class WebGLDithering implements RenderFilter {
     private readonly framebufferPool: FramebufferPool;
     
     private  program: WebGLProgram | null = null; 
-    private spreadValue : number = 2;
-    private bayerType : string = "bayer8Luminance";
-    
+    private spreadValue : number = 0.01;
+    private bayerType : number = 4;
+    public config : RangeSlidersProps[];
     /** 
 
     */
 
-    private bayers = new Map<string, number[]>([
-    ["bayer2", [
+    // Bayer2
+    private bayers : number[][]= [
+    [
         0, 2, 
         3, 1
-    ]],
-    ["bayer4", [
+    ],
+    // Bayer4
+    [ 
         0, 8, 2, 10, 
         12, 4, 14, 6,
         3, 11, 1, 9,
         15, 7, 13, 5
-    ]],
-    ["bayer8", [
+    ],
+    // Bayer8
+    [ 
         0, 32,  8, 40,  2, 34, 10, 42,
         48, 16, 56, 24, 50, 18, 58, 26,
         12, 44,  4, 36, 14, 46,  6, 38,
@@ -39,8 +43,10 @@ class WebGLDithering implements RenderFilter {
         51, 19, 59, 27, 49, 17, 57, 25,
         15, 47,  7, 39, 13, 45,  5, 37,
         63, 31, 55, 23, 61, 29, 53, 21
-    ]],
-    ["bayer8Luminance", [
+    ],
+
+    // bayer8Luminance
+    [
         16, 11, 10, 16, 24, 40, 51, 61,
         12, 12, 14, 19, 26, 58, 60, 55,
         14, 13, 16, 24, 40, 57, 69, 56,
@@ -49,23 +55,37 @@ class WebGLDithering implements RenderFilter {
         24, 35, 55, 64, 81,104,113, 92,
         49, 64, 78, 87,103,121,120,101,
         72, 92, 95, 98,112,100,103, 99
-    ]]
-    ]);
+    ]
+    ];
 
     constructor (
-        wgl:WebGLCore,
+        wgl: WebGLCore,
         framebufferPool: FramebufferPool
     ) {
         this.wgl = wgl;
         this.framebufferPool = framebufferPool;
         this.postProcessing = new PostProcessingVertexShader();
+        this.config = [{
+            min: 0.01,
+            max: 10,
+            step : 0.01,
+            value: this.spreadValue,
+            label: "Spread Value"
+        },
+    {
+            min: 1,
+            max: 4,
+            step: 1,
+            value: this.bayerType,
+            label: "Bayer Type"
+        }];
     }
 
     public init() : void {
         this.program = this.wgl.compileAndLinkProgram(this.postProcessing.shader, WebGLDithering.fragmentShader, "Dithering Blur");
     }
 
-    public setAttributes(spreadValue : number, bayerType : string) : void {
+    public setAttributes(spreadValue : number, bayerType : number) : void {
         this.spreadValue = spreadValue;
         this.bayerType = bayerType;
     }
@@ -86,7 +106,7 @@ class WebGLDithering implements RenderFilter {
 
     private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
 
-        const bayer : number[] | undefined = this.bayers.get(this.bayerType);
+        const bayer : number[] = this.bayers[this.bayerType - 1];
         const TEX_NUM = 0;
 
         const U_IMAGE = 'u_image';

@@ -19,6 +19,7 @@ class WebGLRenderer {
     // public flipY : number;
     public img : HTMLImageElement;
     public currentTexture : WebGLTexture;
+    public previewTexture: WebGLTexture | null = null;
     public tex : Texture;
     public compiledFilters : WebGLCompileFilters;
     public renderPipeline : WebGLRenderPipeline;
@@ -44,12 +45,10 @@ class WebGLRenderer {
         this.img = img;
         this.tex = new Texture(gl);
         this.currentTexture = this.tex.createTextureFromImage(img);
+        
+        
         this.historyStack.add(this.currentTexture); // Ensures the 
-
         this.init();
-        const xdog = new WebGLXDoG(this.wgl, this.framebufferPool, this.compiledFilters);
-        xdog.setAttributes(2, 2, 1, 10, 5, 0.99);
-        this.renderPipeline.addFilter(xdog);
         this.renderPipeline.renderPass(this.currentTexture);
     }
 
@@ -102,7 +101,7 @@ class WebGLRenderer {
         if (! this.renderPipeline.currentTex) throw new Error("No Texture available");
         if (! this.program) throw new Error("No program is available for final rendering");
         
-        this.currentTexture = this.historyStack.getTexture();
+        this.previewTexture = this.renderPipeline.currentTex;
         
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -112,7 +111,7 @@ class WebGLRenderer {
         gl.bindVertexArray(this.wgl.vao);
 
         gl.activeTexture(gl.TEXTURE0 + 0);
-        gl.bindTexture(gl.TEXTURE_2D, this.currentTexture);
+        gl.bindTexture(gl.TEXTURE_2D, this.previewTexture);
         this.setCameraUniforms();
         this.finalRenderUniforms();
         gl.drawArrays(gl.TRIANGLES, 0, 6);
