@@ -22,6 +22,7 @@ import WebGLSharpen from './nonCompositeTextures/webGLSharpen';
 import FramebufferPool from '../../framebuffer_textures/framebufferPool';
 import WebGLStreamlineBlur from './nonCompositeTextures/webGLStreamlineBlur';
 import WebGLStructuredTensor from './nonCompositeTextures/webGLStructuredTensor';
+import WebGLStreamlineBilateral from './nonCompositeTextures/webGLStreamLineBilateral';
 
 class WebGLCompileFilters {
     public readonly grayScale : WebGLGrayScale;
@@ -45,6 +46,7 @@ class WebGLCompileFilters {
     public readonly sobel : WebGLSobel;
     public readonly sharpen : WebGLSharpen;
     public readonly streamlineBlur : WebGLStreamlineBlur;
+    public readonly streamlineBilateral : WebGLStreamlineBilateral;
     public readonly structuredTensor : WebGLStructuredTensor;
     public readonly allFilters: { init: () => void }[];
 
@@ -70,6 +72,7 @@ class WebGLCompileFilters {
         this.sobel = new WebGLSobel(wgl, framebufferPool);
         this.sharpen = new WebGLSharpen(wgl, framebufferPool);
         this.streamlineBlur = new WebGLStreamlineBlur(wgl, framebufferPool);
+        this.streamlineBilateral = new WebGLStreamlineBilateral(wgl, framebufferPool);
         this.structuredTensor = new WebGLStructuredTensor(wgl, framebufferPool);
 
 
@@ -92,6 +95,7 @@ class WebGLCompileFilters {
         this.pixelize,
         this.subtractFDoG,
         this.gradientAlignedBilateral,
+        this.streamlineBilateral,
         this.sobel,
         this.sharpen,
         this.streamlineBlur,
