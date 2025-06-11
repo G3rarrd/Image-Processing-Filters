@@ -3,13 +3,15 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLQuantization from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLQuantization";
 
 function useQuantization () {
-    const {rendererRef, setSliderConfigs, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, setSliderConfigs, setOpenFilterControl, filterFuncRef} = useContext(ImageProcessingContext);
     
     function handleQuantizationClick() {
         if (!rendererRef || ! rendererRef.current) return;
 
+        setOpenFilterControl(() => true);
+
         const quantization : WebGLQuantization = rendererRef.current.compiledFilters.quantization;
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
+        const renderer = rendererRef.current;
         
         setSliderConfigs([...quantization.config]); // Helps initiate the slider(s)
 
@@ -23,7 +25,7 @@ function useQuantization () {
             
             quantization.setAttributes(colorCount);
             rendererRef.current.renderPipeline.addFilter(quantization);
-            rendererRef.current.renderPipeline.renderPass(texture);
+            renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
             rendererRef.current.renderScene();
         }
 

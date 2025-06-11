@@ -6,16 +6,19 @@ import WebGLCompileFilters from "../../../../../../utils/ShaderCodes/postprocess
 import FramebufferPool from '../../../../../../utils/framebuffer_textures/framebufferPool';
 
 function useGaussianBlur () {
-    const {setSliderConfigs, rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
+    const {setSliderConfigs, setOpenFilterControl, rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
     
     function handleGaussianBlurClick () {
         if (!rendererRef || !rendererRef.current) return;
+
+        setOpenFilterControl(() => true);
+
         const wgl : WebGLCore = rendererRef.current.wgl;
         const compiledFilter : WebGLCompileFilters = rendererRef.current.compiledFilters;
         const framebufferPool : FramebufferPool = rendererRef.current.framebufferPool;
         const gaussianBlur : WebGLGaussianBlur = new WebGLGaussianBlur(wgl, compiledFilter,framebufferPool);
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
-        
+        const renderer = rendererRef.current;
+
         setSliderConfigs([...gaussianBlur.config]);
 
         filterFuncRef.current = (configs) => {
@@ -27,9 +30,9 @@ function useGaussianBlur () {
             }
 
             gaussianBlur.setAttributes(radius);
-            rendererRef.current.renderPipeline.addFilter(gaussianBlur);
-            rendererRef.current.renderPipeline.renderPass(texture);
-            rendererRef.current.renderScene();
+            renderer.renderPipeline.addFilter(gaussianBlur);
+            renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
+            renderer.renderScene();
         }
 
         filterFuncRef.current(gaussianBlur.config);

@@ -6,17 +6,24 @@ function useGrayscale () {
     const {rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
 
     function handleGrayscale () {
-        if (! rendererRef || ! rendererRef.current) return;
+        if (! rendererRef || !rendererRef.current) return;
 
-        const grayscale : WebGLGrayScale =rendererRef.current.compiledFilters.grayScale;
-        const currentTexture : WebGLTexture = rendererRef.current.currentTexture;
+        const renderer = rendererRef.current;
+        const grayscale : WebGLGrayScale =renderer.compiledFilters.grayScale;
+        // let currentTexture : WebGLTexture = renderer.currentTexture;
 
         filterFuncRef.current = () => {};
         
-        rendererRef.current.renderPipeline.addFilter(grayscale);
-        rendererRef.current.renderPipeline.renderPass(currentTexture);
+        renderer.renderPipeline.addFilter(grayscale);
+        renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
+        renderer.renderScene();
 
-        rendererRef.current.renderScene();
+        
+        const imgWidth = renderer.img.naturalWidth;
+        const imgHeight = renderer.img.naturalHeight;
+        renderer.historyStack.add(renderer.currentTexture, imgWidth, imgHeight);
+        
+        renderer.holdCurrentTexture = renderer.historyStack.getUndoStackTop();
     }
 
     return {handleGrayscale};

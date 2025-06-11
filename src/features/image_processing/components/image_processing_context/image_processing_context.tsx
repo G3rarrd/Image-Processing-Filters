@@ -5,13 +5,13 @@ import WebGLRenderer from "../../../../utils/Scene/webGLRender";
 
 export interface ImageProcessingContextProps {
     src : string | undefined;
-    setSrc : (value : string | undefined) => void;
+    setSrc :React.Dispatch<React.SetStateAction<string | undefined>>;
     
     openFilterControl : boolean;
-    setOpenFilterControl : (value : boolean) => void;
+    setOpenFilterControl : React.Dispatch<React.SetStateAction<boolean>>;
     
     sliderConfigs : RangeSlidersProps[];
-    setSliderConfigs : (value: RangeSlidersProps[]) => void;
+    setSliderConfigs : React.Dispatch<React.SetStateAction<RangeSlidersProps[]>>;
     
     imageError : string | null;
     setImageError : (error : string | null) => void;

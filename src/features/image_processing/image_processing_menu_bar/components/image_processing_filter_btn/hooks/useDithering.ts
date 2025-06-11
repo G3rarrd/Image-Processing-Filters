@@ -3,13 +3,16 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLDithering from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLDithering";
 
 function useDithering () {
-    const {rendererRef, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
+    const {rendererRef, setOpenFilterControl, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
     
     function handleDithering() {
         if (!rendererRef || ! rendererRef.current) return;
 
+        setOpenFilterControl(() => true);
+
         const dithering : WebGLDithering = rendererRef.current.compiledFilters.dithering;
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
+        const renderer = rendererRef.current;
+
         setSliderConfigs([...dithering.config]); // Helps initiate the slider(s)
 
         filterFuncRef.current = (config) => {
@@ -21,7 +24,7 @@ function useDithering () {
                 spreadValue = 2;
                 console.log(spreadValue);
             }
-
+            
             if (bayerType === undefined || bayerType === null) {
                 console.warn("Bayer Type label was not found using initial value");
                 bayerType = 2;
@@ -29,13 +32,11 @@ function useDithering () {
             
             dithering.setAttributes(spreadValue, bayerType);
             rendererRef.current.renderPipeline.addFilter(dithering);
-            rendererRef.current.renderPipeline.renderPass(texture);
+            renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
             rendererRef.current.renderScene();
         }
 
         filterFuncRef.current(dithering.config); // Applies on click
-
-        
     }
     return {handleDithering};
 }

@@ -6,20 +6,22 @@ import FramebufferPool from "../../../../../../utils/framebuffer_textures/frameb
 import WebGLFDoG from "../../../../../../utils/ShaderCodes/postprocessingEffects/compositeTextures/webGLFDoG";
 
 function useFDoG () {
-    const {rendererRef, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
+    const {rendererRef,setOpenFilterControl, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
     
     function handleFDoGClick() {
         if (!rendererRef || ! rendererRef.current) return;
+
+        setOpenFilterControl(() => true);
+
         const wgl : WebGLCore = rendererRef.current.wgl;
         const compiledFilter : WebGLCompileFilters = rendererRef.current.compiledFilters;
         const framebufferPool : FramebufferPool = rendererRef.current.framebufferPool;
         const fDoG : WebGLFDoG = new WebGLFDoG(wgl, framebufferPool, compiledFilter);
 
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
+        const renderer = rendererRef.current;
         setSliderConfigs([...fDoG.config]); // Helps initiate the slider(s)
 
         filterFuncRef.current = (configs) => {
-            let sigmaE : number | undefined= configs.find(cfg => cfg.label === "Radius E")?.value;
             let sigmaM : number | undefined= configs.find(cfg => cfg.label === "Radius M")?.value;
             let sigmaC : number | undefined = configs.find(cfg => cfg.label === "Radius C")?.value;
             let etfKernelSize : number | undefined = configs.find(cfg => cfg.label === "ETF Kernel Size")?.value;
@@ -27,10 +29,7 @@ function useFDoG () {
             let p : number | undefined = configs.find(cfg => cfg.label === "P")?.value;
             let iteration : number | undefined= configs.find(cfg => cfg.label === "Iteration")?.value;
 
-            if (sigmaE === undefined ) {
-                console.warn("Radius E label was not found using initial value");
-                sigmaE = 1.6;
-            }
+
 
             if (sigmaM === undefined ) {
                 console.warn("Radius M label was not found using initial value");
@@ -61,9 +60,9 @@ function useFDoG () {
             }
             
             fDoG.setAttributes(sigmaC, sigmaM, etfKernelSize, tau, p, iteration);
-            rendererRef.current.renderPipeline.addFilter(fDoG);
-            rendererRef.current.renderPipeline.renderPass(texture);
-            rendererRef.current.renderScene();
+            renderer.renderPipeline.addFilter(fDoG);
+            renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
+            renderer.renderScene();
         }
 
         filterFuncRef.current(fDoG.config); // Applies on click

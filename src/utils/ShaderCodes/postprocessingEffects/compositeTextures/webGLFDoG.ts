@@ -19,7 +19,7 @@ class WebGLFDoG implements RenderFilter{
     private sigmaS : number = 1.0;
     private sigmaC : number = 1.6;
     private sigmaM : number = 1.5;
-    private tau : number = 1.0;
+    private tau : number = 0.92;
     private iteration : number = 1;
     private etfKernelSize : number = 3;
     public config : RangeSlidersProps[];
@@ -34,13 +34,12 @@ class WebGLFDoG implements RenderFilter{
         this.compiledFilters = compiledFilters;
         this.etf = new WebGLETF(this.wgl, this.compiledFilters, this.framebufferPool);
         this.config = [
-            {min: 0.01, max: 60, step : 0.001, value: this.sigmaS, label: "Radius E"},
             {min: 0.01, max: 60, step : 0.001, value: this.sigmaC, label: "Radius C"},
             {min: 0.01, max: 60, step : 0.001, value: this.sigmaM, label: "Radius M"},
             {min: 3, max: 21, step : 2, value: this.etfKernelSize, label: "ETF Kernel Size"},
-            {min: 0.01, max: 200, step : 0.01, value: this.tau, label: "Tau"},
+            {min: 0.1, max: 1, step : 0.0001, value: this.tau, label: "Tau"},
             {min: 1, max: 5, step : 1, value: this.iteration, label: "Iteration"},
-            {min: 0.8, max: 1.0, step : 0.0001, value: this.p, label: "P"},
+            {min: 0.1, max: 1.0, step : 0.0001, value: this.p, label: "P"},
         ]
     }
 

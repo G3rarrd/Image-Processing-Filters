@@ -8,15 +8,13 @@ export interface Camera {
 }
 
 class WebGL2DCamera { 
-    public viewState : Camera;
-    public viewProjection : number[];
+    public viewState : Camera=  {x : 0, y : 0, rotation : 0, zoom : 1} ;
+    public viewProjection : number[] = m3.identity();
     public gl : WebGL2RenderingContext;
     constructor (gl : WebGL2RenderingContext) {
         this.gl = gl;
-        
-        this.viewProjection = m3.identity();
-        this.viewState =  {x : 0, y : 0, rotation : 0, zoom : 1};
     }
+
 
     public setUniforms(program : WebGLProgram){
         const matrixLocation = this.gl.getUniformLocation(program, "u_matrix");
@@ -47,6 +45,9 @@ class WebGL2DCamera {
     }
 
     public resetCamera(imgWidth : number, imgHeight : number) : void{
+        this.viewProjection = m3.identity();
+        this.viewState =  {x : 0, y : 0, rotation : 0, zoom : 1};
+        
         // To prevent the texture(img) from under or over filling the canvas screen
         const scaleX =  imgWidth / this.gl.canvas.width;
         const scaleY = imgHeight / this.gl.canvas.height;

@@ -3,16 +3,24 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLInvert from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLInvert";
 
 function useInvert() {
-    const {rendererRef} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
 
     function handleInvert () {
         if (! rendererRef || ! rendererRef.current) return;
 
         const invert : WebGLInvert = rendererRef.current.compiledFilters.invert;
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
-        rendererRef.current.renderPipeline.addFilter(invert);
-        rendererRef.current.renderPipeline.renderPass(texture);
-        rendererRef.current.renderScene();
+        const renderer = rendererRef.current;
+        filterFuncRef.current = () => {};
+        
+        renderer.renderPipeline.addFilter(invert);
+        renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
+        renderer.renderScene();
+        
+    
+        const imgWidth = renderer.img.naturalWidth;
+        const imgHeight = renderer.img.naturalHeight;
+        renderer.historyStack.add(renderer.currentTexture, imgWidth, imgHeight);
+        renderer.holdCurrentTexture  = renderer.historyStack.getUndoStackTop();
     }
 
     return {handleInvert};

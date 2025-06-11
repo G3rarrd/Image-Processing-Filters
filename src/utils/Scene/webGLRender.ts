@@ -8,8 +8,6 @@ import WebGLRenderPipeline from "./webGLRenderPipeline";
 import { cameraVertexShaderCode } from "../ShaderCodes/vertexShaders/cameraVertexShader";
 import FramebufferPool from '../framebuffer_textures/framebufferPool';
 import WebGLHistoryStack from "./webGLHistoryStack";
-import WebGLXDoG from "../ShaderCodes/postprocessingEffects/compositeTextures/webGLXDoG";
-
 
 class WebGLRenderer {
     public wgl : WebGLCore;
@@ -19,7 +17,7 @@ class WebGLRenderer {
     // public flipY : number;
     public img : HTMLImageElement;
     public currentTexture : WebGLTexture;
-    public previewTexture: WebGLTexture | null = null;
+    public holdCurrentTexture: WebGLTexture;
     public tex : Texture;
     public compiledFilters : WebGLCompileFilters;
     public renderPipeline : WebGLRenderPipeline;
@@ -35,7 +33,7 @@ class WebGLRenderer {
         this.wgl = new WebGLCore(gl, gl.canvas.width, gl.canvas.height);
         this.framebufferPool = new FramebufferPool(gl);
         this.historyStack = new WebGLHistoryStack(this.wgl);
-        this.renderPipeline = new WebGLRenderPipeline(this.wgl, img, this.framebufferPool, this.historyStack);
+        this.renderPipeline = new WebGLRenderPipeline(this.wgl, img, this.framebufferPool);
         this.compiledFilters = new WebGLCompileFilters(this.wgl, this.framebufferPool);
         this.compiledFilters.initAll();
         
@@ -45,9 +43,9 @@ class WebGLRenderer {
         this.img = img;
         this.tex = new Texture(gl);
         this.currentTexture = this.tex.createTextureFromImage(img);
+        this.holdCurrentTexture = this.currentTexture;
         
-        
-        this.historyStack.add(this.currentTexture); // Ensures the 
+        this.historyStack.add(this.currentTexture, this.img.naturalWidth, this.img.naturalHeight); // Ensures the 
         this.init();
         this.renderPipeline.renderPass(this.currentTexture);
     }
@@ -90,19 +88,11 @@ class WebGLRenderer {
         this.cam.setUniforms(this.program);
     }
 
-
-    public renderScene() {
-        /* Render current texture to the scene using the current uv mapping */ 
-        const gl = this.wgl.gl;
-        if (! gl ) throw new Error("WebGL context is not available");
-
-        this.wgl.clearCanvas();
-
-        if (! this.renderPipeline.currentTex) throw new Error("No Texture available");
+    private drawToScreen(texture : WebGLTexture) {
         if (! this.program) throw new Error("No program is available for final rendering");
         
-        this.previewTexture = this.renderPipeline.currentTex;
-        
+        const gl = this.wgl.gl;
+        this.wgl.clearCanvas();
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         this.wgl.clearCanvas();
@@ -110,14 +100,22 @@ class WebGLRenderer {
         gl.useProgram(this.program);
         gl.bindVertexArray(this.wgl.vao);
 
-        gl.activeTexture(gl.TEXTURE0 + 0);
-        gl.bindTexture(gl.TEXTURE_2D, this.previewTexture);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
         this.setCameraUniforms();
         this.finalRenderUniforms();
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
         gl.bindVertexArray(null);   
-    }   
+    }
+
+
+    public renderScene() {
+        /* */ 
+        this.drawToScreen(this.currentTexture);
+    }
+
+    
 
 }
 

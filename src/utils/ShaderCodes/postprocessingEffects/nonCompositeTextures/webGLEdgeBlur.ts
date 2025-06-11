@@ -8,7 +8,7 @@ import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
 
 class WebGLEdgeBlurPass implements RenderFilter {
-    private static readonly MAX_KERNEL_SIZE : number= 200;
+    private static readonly MAX_KERNEL_SIZE : number= 1000;
     private readonly wgl : WebGLCore;
     private readonly framebufferPool : FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;

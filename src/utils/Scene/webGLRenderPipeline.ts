@@ -1,22 +1,18 @@
 import WebGLCore from "../webGLCore";
 import { RenderFilter } from '../ShaderCodes/postprocessingEffects/webGLRenderFilter';
 import FramebufferPool from '../framebuffer_textures/framebufferPool';
-import WebGLHistoryStack from "./webGLHistoryStack";
 
 
 class WebGLRenderPipeline {
     public pipeline : RenderFilter[]= [];
     private wgl : WebGLCore; 
     private img : HTMLImageElement;
-    public currentTex : WebGLTexture | null = null;
     private framebufferPool : FramebufferPool; 
-    private historyStack : WebGLHistoryStack;
 
-    constructor(wgl : WebGLCore, img : HTMLImageElement, framebufferPool: FramebufferPool, historyStack : WebGLHistoryStack) {
+    constructor(wgl : WebGLCore, img : HTMLImageElement, framebufferPool: FramebufferPool) {
         this.wgl = wgl;
         this.img = img;
         this.framebufferPool = framebufferPool;
-        this.historyStack = historyStack;
 
 
         // if (!this.wgl || !this.wgl.gl) return;
@@ -45,22 +41,22 @@ class WebGLRenderPipeline {
         this.pipeline.length = 0;
     }
 
-    public renderPass (inputTex : WebGLTexture) {
-        this.currentTex = inputTex;
+    public renderPass (inputTex : WebGLTexture) : WebGLTexture{
 
-        if (this.pipeline.length === 0) return ;
+        if (this.pipeline.length === 0) return inputTex;
         const gl = this.wgl.gl;
         if (! gl ) throw new Error("WebGL context is null");
         let fbo;
         // Risk :  Possible error may occur
+        let postProcessedTexture : WebGLTexture = inputTex;
         try {
             
             for (const filter of this.pipeline) {
                 
-                if (!this.currentTex) break;
+                if (!postProcessedTexture) break;
                 
-                fbo = filter.render([this.currentTex], this.img.naturalWidth, this.img.naturalHeight);
-                this.currentTex = fbo.getTexture();
+                fbo = filter.render([postProcessedTexture], this.img.naturalWidth, this.img.naturalHeight);
+                postProcessedTexture = fbo.getTexture();
             }
 
         // Always run the below code regardless of the state of the outcomes in the loop 
@@ -77,7 +73,9 @@ class WebGLRenderPipeline {
             }
             
             this.clearPipeline();
+            
         }
+        return postProcessedTexture
     }
 
     public getFinalFilter(){

@@ -21,11 +21,11 @@
     display: none;
 }
 
-.hidden {
+.filter_btn_dropdown.hidden {
     display: none;
 }
 
-.visible {
+.filter_btn_dropdown.visible {
     display: flex;
     flex-direction: column;
 }

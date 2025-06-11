@@ -3,16 +3,24 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLEmboss from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLEmboss";
 
 function useEmboss() {
-    const {rendererRef} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
 
     function handleEmbossClick () {
         if (! rendererRef || ! rendererRef.current) return;
 
         const emboss : WebGLEmboss = rendererRef.current.compiledFilters.emboss;
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
-        rendererRef.current.renderPipeline.addFilter(emboss);
-        rendererRef.current.renderPipeline.renderPass(texture);
-        rendererRef.current.renderScene();
+        const renderer = rendererRef.current;
+        
+        filterFuncRef.current = () => {};
+        
+        renderer.renderPipeline.addFilter(emboss);
+        renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
+        renderer.renderScene();
+        
+        const imgWidth = renderer.img.naturalWidth;
+        const imgHeight = renderer.img.naturalHeight;
+        renderer.historyStack.add(renderer.currentTexture, imgWidth, imgHeight);
+        renderer.holdCurrentTexture  = renderer.historyStack.getUndoStackTop();
     }
 
     return { handleEmbossClick};

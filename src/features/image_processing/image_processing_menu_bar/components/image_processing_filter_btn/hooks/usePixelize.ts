@@ -3,13 +3,15 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLPixelize from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLPixelize";
 
 function usePixelize () {
-    const {rendererRef, setSliderConfigs, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, setSliderConfigs, setOpenFilterControl, filterFuncRef} = useContext(ImageProcessingContext);
     
     function handlePixelizeClick() {
         if (!rendererRef || ! rendererRef.current) return;
 
+        setOpenFilterControl(() => true);
+
         const pixelize : WebGLPixelize = rendererRef.current.compiledFilters.pixelize;
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
+        const renderer = rendererRef.current;
         
         setSliderConfigs([...pixelize.config]); // Helps initiate the slider(s)
 
@@ -23,7 +25,7 @@ function usePixelize () {
             
             pixelize.setAttributes(blockSize);
             rendererRef.current.renderPipeline.addFilter(pixelize);
-            rendererRef.current.renderPipeline.renderPass(texture);
+            renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
             rendererRef.current.renderScene();
         }
 

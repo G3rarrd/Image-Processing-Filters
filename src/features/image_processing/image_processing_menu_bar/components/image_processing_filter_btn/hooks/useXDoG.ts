@@ -6,17 +6,20 @@ import WebGLCompileFilters from "../../../../../../utils/ShaderCodes/postprocess
 import FramebufferPool from "../../../../../../utils/framebuffer_textures/framebufferPool";
 
 function useXDoG () {
-    const {rendererRef, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef, setSliderConfigs, setOpenFilterControl} = useContext(ImageProcessingContext);
     
     function handleXDoGClick() {
         if (!rendererRef || ! rendererRef.current) return;
+        
+        setOpenFilterControl(() => true);
+
         const wgl : WebGLCore = rendererRef.current.wgl;
         const compiledFilter : WebGLCompileFilters = rendererRef.current.compiledFilters;
         const framebufferPool : FramebufferPool = rendererRef.current.framebufferPool;
         const xDoG : WebGLXDoG = new WebGLXDoG(wgl, framebufferPool,compiledFilter);
 
-        const texture : WebGLTexture = rendererRef.current.currentTexture;
-        setSliderConfigs([...xDoG.config]); // Helps initiate the slider(s)
+        const renderer = rendererRef.current;
+        setSliderConfigs(() => [...xDoG.config]); // Helps initiate the slider(s)
 
         filterFuncRef.current = (configs) => {
             let sigmaE : number | undefined= configs.find(cfg => cfg.label === "Radius E")?.value;
@@ -64,9 +67,9 @@ function useXDoG () {
 
             
             xDoG.setAttributes(sigmaC, sigmaE,sigmaM, sigmaA, tau, phi, epsilon) ;
-            rendererRef.current.renderPipeline.addFilter(xDoG);
-            rendererRef.current.renderPipeline.renderPass(texture);
-            rendererRef.current.renderScene();
+            renderer.renderPipeline.addFilter(xDoG);
+            renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
+            renderer.renderScene();
         }
 
         filterFuncRef.current(xDoG.config); // Applies on click

@@ -5,13 +5,16 @@ import { RenderFilter } from "../webGLRenderFilter";
 import WebGLFBL from "./WebGLFBL";
 import WebGLFDoG from "./webGLFDoG";
 import WebGLSuperImpose from "../nonCompositeTextures/webGLSuperImpose";
+import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import WebGLCompileFilters from "../webGLCompileFilters";
+import { RangeSlidersProps } from "../../../../types/slider";
 
 class WebGLFBIA implements RenderFilter{
     private readonly wgl : WebGLCore;
     private readonly fdog : WebGLFDoG;
     private readonly fbl : WebGLFBL;
-    private readonly superImpose : WebGLSuperImpose;
     private readonly framebufferPool : FramebufferPool;
+    private readonly compiledFilters : WebGLCompileFilters;
 
     // FBL Attributes
     private iterationFBL : number = 1.0; 
@@ -31,13 +34,30 @@ class WebGLFBIA implements RenderFilter{
     private etfKernelSizeFDoG : number = 3;
     private p : number = 1.0;
     private iterationFDoG : number = 1.0; 
+
+    public config : RangeSlidersProps[];
     
-    constructor (wgl:WebGLCore, framebufferPool : FramebufferPool) {
+    
+    constructor (
+        wgl:WebGLCore, 
+        framebufferPool : FramebufferPool, 
+        compiledFilters : WebGLCompileFilters
+    ) {
         this.wgl = wgl;
         this.framebufferPool = framebufferPool;
-        this.fdog = new WebGLFDoG(this.wgl, this.framebufferPool);
-        this.fbl = new WebGLFBL(this.wgl, this.framebufferPool);
-        this.superImpose = new WebGLSuperImpose(this.wgl);
+        this.compiledFilters = compiledFilters ;
+        this.fdog = new WebGLFDoG(this.wgl, this.framebufferPool, compiledFilters);
+        this.fbl = new WebGLFBL(this.wgl, this.framebufferPool, compiledFilters);
+    
+        this.config = [
+            {min: 0.01, max: 60, step : 0.001, value: this.sigmaS, label: "Radius E"},
+            {min: 0.01, max: 60, step : 0.001, value: this.sigmaC, label: "Radius C"},
+            {min: 0.01, max: 60, step : 0.001, value: this.sigmaM, label: "Radius M"},
+            {min: 3, max: 21, step : 2, value: this.etfKernelSizeFDoG, label: "ETF Kernel Size FDoG"},
+            {min: 0.9, max: 1, step : 0.0001, value: this.tau, label: "Tau"},
+            {min: 1, max: 5, step : 1, value: this.iterationFDoG, label: "Iteration FDoG"},
+            {min: 0.8, max: 1.0, step : 0.0001, value: this.p, label: "P"},
+        ]
     }
 
     public setAttributes (
@@ -75,7 +95,7 @@ class WebGLFBIA implements RenderFilter{
         this.iterationFDoG = iterationFDoG;
     }
     
-    public render(inputTextures : WebGLTexture[], fboPair : FramebufferPair) :WebGLTexture{
+    public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer{
         /**
 
         */

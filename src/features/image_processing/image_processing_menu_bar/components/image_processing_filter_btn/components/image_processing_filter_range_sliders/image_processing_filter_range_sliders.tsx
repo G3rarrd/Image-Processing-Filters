@@ -1,5 +1,6 @@
 import styles from './image_processing_filter_range_sliders.module.css';
 import { RangeSlidersProps } from '../../../../../../../types/slider';
+import React from 'react';
 
 interface SliderActionProps {
     config : RangeSlidersProps,
@@ -27,4 +28,4 @@ const  ImageProcessingRangeSliders : React.FC<SliderActionProps> = ({config, onC
     );
 }
 
-export default ImageProcessingRangeSliders;
+export default React.memo(ImageProcessingRangeSliders);
