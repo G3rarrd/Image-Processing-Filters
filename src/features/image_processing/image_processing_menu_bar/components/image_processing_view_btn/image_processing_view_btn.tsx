@@ -3,6 +3,8 @@ import styles from './image_processing_view_btn.module.css';
 import { useDropdownExit } from '../../hooks/useDropdownExit';
 import { ImageProcessingContext } from '../../../components/image_processing_context/image_processing_provider';
 import useFitArea from './hooks/useFitArea';
+import useZoomIn from './hooks/useZoomIn';
+import useZoomOut from './hooks/useZoomOut';
 const ImageProcessingViewBtn = () => {
     const {glCanvasRef, src, rendererRef} = useContext(ImageProcessingContext);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -13,10 +15,13 @@ const ImageProcessingViewBtn = () => {
     }
 
     const {handleFitAreaClick} = useFitArea();
+    const {handleZoomIn} = useZoomIn();
+    const {handleZoomOut} = useZoomOut();
 
     const viewOptions = [
-        {option : "Fit to Area", handler : handleFitAreaClick}
-        
+        {option : "Fit to Area", handler : handleFitAreaClick},
+        {option : "Zoom In", handler : handleZoomIn },
+        {option : "Zoom Out", handler : handleZoomOut },
     ];
 
     useDropdownExit(dropdownRef, () => setOpenDropdown(false));

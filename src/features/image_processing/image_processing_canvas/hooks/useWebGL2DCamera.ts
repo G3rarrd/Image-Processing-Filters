@@ -1,12 +1,11 @@
 import { useContext, useEffect, useState } from "react";
-import WebGL2DCamera, { Camera as ViewState } from "../../../../utils/Scene/webGL2DCamera";
+import WebGL2DCamera from "../../../../utils/Scene/webGL2DCamera";
 import { ImageProcessingContext } from "../../components/image_processing_context/image_processing_provider";
 import { m3 } from "../../../../utils/math/webGLMatrix3";
 import WebGLRenderer from "../../../../utils/Scene/webGLRender";
 
 const useWebGL2DScene = () => {
     const {glCanvasRef, src, rendererRef} = useContext(ImageProcessingContext);
-    const [viewState, setViewState] = useState<ViewState | null>(null);
     const [canvasDimensions, setCanvasDimensions] = useState<[number, number]>([0, 0]);
     const [curSrc, setCurSrc] = useState<string>(""); // Checks if a image has been set
     const [startPos, setStartPos] = useState<[number, number] | null>(null);
@@ -30,34 +29,41 @@ const useWebGL2DScene = () => {
 
     const handleWheel = (e : WheelEvent) => {
         e.preventDefault();
-        const clips : [number, number] | null = getClipSpaceMousePosition(e);
-        if (!clips) return;
-        if (!rendererRef || !rendererRef.current) throw new Error("Renderer is not available")
+        if (!rendererRef || !rendererRef.current) throw new Error("Renderer is not available");
         
         const camera = rendererRef.current.cam;
-        const operand = Math.min(1, Math.max(-1, e.deltaY))*-1; // -1 or +1
-        if (!camera) return;
+        if (e.altKey) {
+            const clips : [number, number] | null = getClipSpaceMousePosition(e);
+            if (!clips) return;
 
-        camera.setViewProjection();
-        const [preZoomX, preZoomY] = m3.transformPoint(m3.inverse(camera.viewProjection),clips);
-        
-        camera.viewState.zoom  = Math.max(0.01, camera.viewState.zoom + (0.05*operand));
+            const operand = Math.min(1, Math.max(-1, e.deltaY))*-1; // -1 or +1
+            camera.zoom(clips, operand);
+
+        } else if (e.shiftKey) {
+            camera.viewState.x += e.deltaY; 
+
+        } else {
+            camera.viewState.y += e.deltaY;  
+        }
+
         camera.setViewProjection(); 
+        rendererRef.current.renderScene();
         
-        const [postZoomX, postZoomY] = m3.transformPoint(m3.inverse(camera.viewProjection), clips);
-        camera.viewState.x += preZoomX - postZoomX;
-        camera.viewState.y += preZoomY - postZoomY;
-        camera.setViewProjection(); 
-        setViewState({...camera.viewState});
     }
 
     const handleMouseDown = (e : MouseEvent) => {
         e.preventDefault();
         const clips : [number, number] | null = getClipSpaceMousePosition(e);
-        if (! rendererRef || !rendererRef.current) throw new Error("Renderer is not available")
+        if (! rendererRef || !rendererRef.current){
+            console.warn("Renderer is not available");
+            return;
+        };
+
+        if (e.button !== 1) return;
+
         const camera = rendererRef.current.cam;
         if (!clips) return;
-        if (!viewState) return;
+
         if (!camera.viewProjection) throw new Error("view Projection is not available")
         const [prePanX, prePanY] = m3.transformPoint(m3.inverse(camera.viewProjection),clips);
         setStartPos([prePanX, prePanY]);
@@ -81,7 +87,7 @@ const useWebGL2DScene = () => {
         camera.viewState.x += (startPos[0] - postPanX) ;
         camera.viewState.y += (startPos[1] - postPanY);
         camera.setViewProjection(); 
-        setViewState({...camera.viewState});
+        rendererRef.current.renderScene();
     }
 
     const getCanvasDimensions = () : [number, number] | null => {
@@ -153,7 +159,7 @@ const useWebGL2DScene = () => {
                 const camera : WebGL2DCamera = new WebGL2DCamera(gl);
                 camera.resetCamera(img.naturalWidth, img.naturalHeight);
                 camera.setViewProjection()
-                setViewState({...camera.viewState});
+
                 setCurSrc(src);
 
                 rendererRef.current  = new WebGLRenderer(gl, camera, img);
@@ -170,7 +176,7 @@ const useWebGL2DScene = () => {
         }
         
 
-    }, [viewState, src, canvasDimensions]);
+    }, [ src, canvasDimensions]);
 
     return {handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, canvasDimensions};
 }

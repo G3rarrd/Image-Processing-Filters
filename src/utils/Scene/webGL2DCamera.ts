@@ -67,6 +67,20 @@ class WebGL2DCamera {
         // this.viewState.y = 0;
         // this.viewState.zoom =  1;
     }
+
+    public zoom(clipSpace : [number, number], operand : number ) {
+        this.setViewProjection();
+        const [preZoomX, preZoomY] = m3.transformPoint(m3.inverse(this.viewProjection),clipSpace );
+        
+        this.viewState.zoom =  Math.max(0.01, this.viewState.zoom + (0.05 * operand));
+        
+        this.setViewProjection();
+        const [postZoomX, postZoomY] = m3.transformPoint(m3.inverse(this.viewProjection),clipSpace);
+
+        this.viewState.x += preZoomX - postZoomX;
+        this.viewState.y += preZoomY - postZoomY;
+        this.setViewProjection();
+    }
 }
 
 export default WebGL2DCamera;

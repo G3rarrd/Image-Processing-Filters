@@ -39,7 +39,7 @@ class WebGLFBL implements RenderFilter{
             {min: 3, max: 21, step : 2, value: this.etfKernelSize, label: "ETF Kernel Size"},
             {min: 2, max: 255, step : 1, value: this.colorCount,label: "Color Count"},
             {min: 1, max: 5, step : 1, value: this.iteration, label: "Iteration"},
-            {min: 0.01,max: 5,step : 0.001,value: this.spreadValue,label: "Spread Value"},
+            {min: 0.01,max: 2,step : 0.001,value: this.spreadValue,label: "Spread Value"},
         ]
     }
 
@@ -104,7 +104,7 @@ class WebGLFBL implements RenderFilter{
 
         dithering.setAttributes(this.spreadValue, 4); // 4 stands for bayer8Luminance which is used according to the paper
         const luminanceFbo = dithering.render([currentTexture], w, h);
-        
+
         // gradientBilateral Fbo (used at the current texture) is no longer needed
         if (gradientBilateralFbo) this.framebufferPool.release(gradientBilateralFbo);
 
