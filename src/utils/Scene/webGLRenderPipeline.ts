@@ -13,13 +13,6 @@ class WebGLRenderPipeline {
         this.wgl = wgl;
         this.img = img;
         this.framebufferPool = framebufferPool;
-
-
-        // if (!this.wgl || !this.wgl.gl) return;
-        // this.framebuffers = [ 
-        //     new Framebuffer(this.wgl.gl, this.img.naturalWidth, this.img.naturalHeight), 
-        //     new Framebuffer(this.wgl.gl, this.img.naturalWidth, this.img.naturalHeight)
-        // ];
     }
 
     public setGlobalUniforms (program : WebGLProgram) {

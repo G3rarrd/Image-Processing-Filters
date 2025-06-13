@@ -16,6 +16,7 @@ import useFDoG from './hooks/useFDoG';
 import useFBL from './hooks/useFBL';
 import { ImageProcessingContext } from '../../../components/image_processing_context/image_processing_provider';
 import { useDropdownExit } from '../../hooks/useDropdownExit';
+import useKuwahara from './hooks/useKuwahara';
 
 const ImageProcessingFilterBtn = () => {
     const {rendererRef} = useContext(ImageProcessingContext);
@@ -49,6 +50,7 @@ const ImageProcessingFilterBtn = () => {
     const {handleXDoGClick} = useXDoG();
     const {handleFDoGClick} = useFDoG();
     const {handleFBLClick} = useFBL();
+    const {handleKuwaharaClick} = useKuwahara();
 
     const filterOptions = [
         { filter: 'Grayscale', handler: handleGrayscale },
@@ -64,6 +66,7 @@ const ImageProcessingFilterBtn = () => {
         { filter: 'XDoG', handler: handleXDoGClick },
         { filter: 'FDoG', handler: handleFDoGClick },
         { filter: 'FBL', handler: handleFBLClick },
+        { filter: 'Kuwahara', handler: handleKuwaharaClick},
     ];
 
     function handleClick () {

@@ -38,10 +38,10 @@ const ImageProcessingCanvas = () => {
         {/* <canvas onClick={downloadCanvas} className="image_processing_canvas" ref={srcCanvasRef}></canvas> */}
         <canvas className="image_processing_webgl" 
             ref={glCanvasRef} 
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+            onWheel={(e: React.WheelEvent<HTMLCanvasElement>) => handleWheel(e)}
+            onMouseDown={(e: React.WheelEvent<HTMLCanvasElement>) => handleMouseDown(e)}
+            onMouseMove={(e: React.WheelEvent<HTMLCanvasElement>) => handleMouseMove(e)}
+            onMouseUp={() => handleMouseUp()}
         >
 
         </canvas>

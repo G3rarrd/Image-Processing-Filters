@@ -4,6 +4,7 @@ import WebGLCore from "../../../../../../utils/webGLCore";
 import WebGLCompileFilters from "../../../../../../utils/ShaderCodes/postprocessingEffects/webGLCompileFilters";
 import FramebufferPool from "../../../../../../utils/framebuffer_textures/framebufferPool";
 import WebGLFDoG from "../../../../../../utils/ShaderCodes/postprocessingEffects/compositeTextures/webGLFDoG";
+import WebGLRenderer from "../../../../../../utils/Scene/webGLRender";
 
 function useFDoG () {
     const {rendererRef,setOpenFilterControl, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
@@ -12,13 +13,13 @@ function useFDoG () {
         if (!rendererRef || ! rendererRef.current) return;
 
         setOpenFilterControl(() => true);
-
-        const wgl : WebGLCore = rendererRef.current.wgl;
-        const compiledFilter : WebGLCompileFilters = rendererRef.current.compiledFilters;
-        const framebufferPool : FramebufferPool = rendererRef.current.framebufferPool;
+        const renderer : WebGLRenderer =rendererRef.current; 
+        const wgl : WebGLCore = renderer.wgl;
+        const compiledFilter : WebGLCompileFilters = renderer.compiledFilters;
+        const framebufferPool : FramebufferPool = renderer.framebufferPool;
         const fDoG : WebGLFDoG = new WebGLFDoG(wgl, framebufferPool, compiledFilter);
 
-        const renderer = rendererRef.current;
+
         setSliderConfigs([...fDoG.config]); // Helps initiate the slider(s)
 
         filterFuncRef.current = (configs) => {

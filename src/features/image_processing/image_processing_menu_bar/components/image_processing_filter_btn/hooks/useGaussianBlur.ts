@@ -13,11 +13,11 @@ function useGaussianBlur () {
 
         setOpenFilterControl(() => true);
 
-        const wgl : WebGLCore = rendererRef.current.wgl;
-        const compiledFilter : WebGLCompileFilters = rendererRef.current.compiledFilters;
-        const framebufferPool : FramebufferPool = rendererRef.current.framebufferPool;
-        const gaussianBlur : WebGLGaussianBlur = new WebGLGaussianBlur(wgl, compiledFilter,framebufferPool);
         const renderer = rendererRef.current;
+        const wgl : WebGLCore = renderer.wgl;
+        const compiledFilter : WebGLCompileFilters = renderer.compiledFilters;
+        const framebufferPool : FramebufferPool = renderer.framebufferPool;
+        const gaussianBlur : WebGLGaussianBlur = new WebGLGaussianBlur(wgl, compiledFilter,framebufferPool);
 
         setSliderConfigs([...gaussianBlur.config]);
 

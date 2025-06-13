@@ -4,12 +4,13 @@ import ImageProcessingCanvas from "../../../../image_processing_canvas/image_pro
 import ImageUploadBtn from "../../../image_upload_btn/image_upload_btn";
 import ImageDownloadBtn from "../../../image_download_btn/image_download_btn";
 import './image_processing_upload_area.css';
+import useUpload from "../../../../../../hooks/useUpload";
 
 function ImageUploadArea () {
-    const {src, imageError, setSrc, handleImageUpload} = useContext(ImageProcessingContext);
+    const {src, imageError} = useContext(ImageProcessingContext);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    
     const imgIconSrc = "src/assets/—Pngtree—vector picture icon_4013555.png";
+    const {handleUpload} = useUpload();
 
 
     const handleClick = () : void => {
@@ -24,6 +25,7 @@ function ImageUploadArea () {
         )
     }
 
+    
     if (!src) {
         return (
             <>
@@ -35,10 +37,10 @@ function ImageUploadArea () {
             <input 
                 type="file" 
                 ref={fileInputRef} 
-                onChange={handleImageUpload} 
+                onChange={(e : React.ChangeEvent<HTMLInputElement>) => handleUpload(e)} 
                 style={{display: 'none'}} 
                 accept="image/*"
-            />
+                />
         </>
         )
     }

@@ -16,7 +16,6 @@ export interface ImageProcessingContextProps {
     imageError : string | null;
     setImageError : (error : string | null) => void;
 
-    handleImageUpload : (e : React.ChangeEvent<HTMLInputElement>) => void; 
     downloadWebGL : () => void;
 
     glCanvasRef : React.MutableRefObject<HTMLCanvasElement> | null;
@@ -37,7 +36,6 @@ export const defaultValue : ImageProcessingContextProps = {
     imageError: null,
     setImageError : () => {},
 
-    handleImageUpload  : () => {},
     downloadWebGL : () => {},
 
     glCanvasRef : null,

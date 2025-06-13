@@ -18,12 +18,8 @@ export const ImageProcessingProvider : React.FC<{children : ReactNode}> = ({chil
     const rendererRef = useRef<WebGLRenderer | null>(null);
     
     const filterFuncRef = useRef<(configs: RangeSlidersProps[]) => void>(() => {});
-    const handleImageUpload = ( e : React.ChangeEvent<HTMLInputElement>) : void => {
-                if (e.target.files && e.target.files.length > 0) {
-                    const url = URL.createObjectURL(e.target.files![0]);
-                    setSrc(url);
-                }   
-            };
+    
+
 
     const downloadWebGL = () : void => {
         const img = new Image();
@@ -55,7 +51,6 @@ export const ImageProcessingProvider : React.FC<{children : ReactNode}> = ({chil
         imageError, 
         setImageError, 
 
-        handleImageUpload, 
         downloadWebGL, 
 
         glCanvasRef, 

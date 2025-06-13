@@ -23,6 +23,7 @@ import FramebufferPool from '../../framebuffer_textures/framebufferPool';
 import WebGLStreamlineBlur from './nonCompositeTextures/webGLStreamlineBlur';
 import WebGLStructuredTensor from './nonCompositeTextures/webGLStructuredTensor';
 import WebGLStreamlineBilateral from './nonCompositeTextures/webGLStreamLineBilateral';
+import WebGLKuwahara from './nonCompositeTextures/webGLKuwahara';
 
 class WebGLCompileFilters {
     public readonly grayScale : WebGLGrayScale;
@@ -48,6 +49,7 @@ class WebGLCompileFilters {
     public readonly streamlineBlur : WebGLStreamlineBlur;
     public readonly streamlineBilateral : WebGLStreamlineBilateral;
     public readonly structuredTensor : WebGLStructuredTensor;
+    public readonly kuwahara : WebGLKuwahara;
     public readonly allFilters: { init: () => void }[];
 
     constructor (wgl : WebGLCore, framebufferPool : FramebufferPool) {
@@ -74,7 +76,7 @@ class WebGLCompileFilters {
         this.streamlineBlur = new WebGLStreamlineBlur(wgl, framebufferPool);
         this.streamlineBilateral = new WebGLStreamlineBilateral(wgl, framebufferPool);
         this.structuredTensor = new WebGLStructuredTensor(wgl, framebufferPool);
-
+        this.kuwahara = new WebGLKuwahara(wgl, framebufferPool);
 
         this.allFilters = [
         this.grayScale,
@@ -100,6 +102,7 @@ class WebGLCompileFilters {
         this.sharpen,
         this.streamlineBlur,
         this.structuredTensor,
+        this.kuwahara
         ];
     }
 

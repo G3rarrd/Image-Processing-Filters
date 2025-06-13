@@ -83,15 +83,15 @@ class WebGLPixelize implements RenderFilter {
         out vec4 outColor;
 
         void main() {
-            vec2 texelSize = vec2(textureSize(u_image, 0));
-            vec2 pixelSize = 1.0 / texelSize;
-            vec2 pixelPos = texelSize * v_texCoord;
+            vec2 pixelSize = vec2(textureSize(u_image, 0));
+            vec2 texelSize = 1.0 / pixelSize;
+            vec2 pixelPos = pixelSize * v_texCoord;
 
             float blockSize = float(u_block_size);
             
             vec2 blockUV = floor(pixelPos / blockSize) * blockSize + (blockSize * 0.5);
 
-            blockUV /= texelSize;
+            blockUV /= pixelSize;
 
             outColor = texture(u_image, blockUV);
         }`;

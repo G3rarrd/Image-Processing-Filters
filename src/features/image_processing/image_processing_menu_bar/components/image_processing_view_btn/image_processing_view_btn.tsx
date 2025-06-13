@@ -1,12 +1,10 @@
-import { useContext, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import styles from './image_processing_view_btn.module.css';
 import { useDropdownExit } from '../../hooks/useDropdownExit';
-import { ImageProcessingContext } from '../../../components/image_processing_context/image_processing_provider';
 import useFitArea from './hooks/useFitArea';
 import useZoomIn from './hooks/useZoomIn';
 import useZoomOut from './hooks/useZoomOut';
 const ImageProcessingViewBtn = () => {
-    const {glCanvasRef, src, rendererRef} = useContext(ImageProcessingContext);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [open, setOpenDropdown] = useState<boolean>(false)
     

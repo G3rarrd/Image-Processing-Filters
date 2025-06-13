@@ -10,7 +10,7 @@ const useWebGL2DScene = () => {
     const [curSrc, setCurSrc] = useState<string>(""); // Checks if a image has been set
     const [startPos, setStartPos] = useState<[number, number] | null>(null);
 
-    const getClipSpaceMousePosition = (e : MouseEvent) : [number, number] | null=> {
+    function getClipSpaceMousePosition (e: React.MouseEvent | React.WheelEvent) : [number, number] | null {
         if (!glCanvasRef || !glCanvasRef.current) return null;
         const glCanvas = glCanvasRef.current;
         const rect = glCanvas.getBoundingClientRect();
@@ -27,7 +27,7 @@ const useWebGL2DScene = () => {
         return[clipX, clipY]
     }
 
-    const handleWheel = (e : WheelEvent) => {
+    function handleWheel (e: React.WheelEvent<HTMLCanvasElement>) : void {
         e.preventDefault();
         if (!rendererRef || !rendererRef.current) throw new Error("Renderer is not available");
         
@@ -48,10 +48,9 @@ const useWebGL2DScene = () => {
 
         camera.setViewProjection(); 
         rendererRef.current.renderScene();
-        
     }
 
-    const handleMouseDown = (e : MouseEvent) => {
+    function handleMouseDown (e: React.WheelEvent<HTMLCanvasElement>) : void {
         e.preventDefault();
         const clips : [number, number] | null = getClipSpaceMousePosition(e);
         if (! rendererRef || !rendererRef.current){
@@ -69,13 +68,14 @@ const useWebGL2DScene = () => {
         setStartPos([prePanX, prePanY]);
     }
 
-    const handleMouseUp = () => {
+    function handleMouseUp () : void {
         setStartPos(null);
     }
 
-    const handleMouseMove = (e : MouseEvent) => {
+    function handleMouseMove  (e: React.WheelEvent<HTMLCanvasElement>) : void {
         if (!startPos) return;
         if (! rendererRef || !rendererRef.current) throw new Error("Renderer is not available")
+        
         const camera = rendererRef.current.cam;
         const clips : [number, number] | null = getClipSpaceMousePosition(e);
 
@@ -90,7 +90,7 @@ const useWebGL2DScene = () => {
         rendererRef.current.renderScene();
     }
 
-    const getCanvasDimensions = () : [number, number] | null => {
+    function getCanvasDimensions  () : [number, number] | null  {
         if (!glCanvasRef || !glCanvasRef.current) return null
         const glCanvas: HTMLCanvasElement | null = glCanvasRef.current;
         const gl : WebGL2RenderingContext | null | undefined = glCanvas?.getContext('webgl2');

@@ -10,7 +10,7 @@ import WebGLShaderPass from '../webGLShaderPass';
 class WebGLGrayScale implements RenderFilter{
     private readonly framebufferPool: FramebufferPool;
     private readonly wgl : WebGLCore;
-    public program : WebGLProgram | null = null;
+    private program : WebGLProgram | null = null;
     private postProcessing : PostProcessingVertexShader;
     constructor (
         wgl: WebGLCore, 
