@@ -49,7 +49,9 @@ class WebGLStructuredTensor implements RenderFilter {
         gl.uniform1i(imageLocation, TEX_NUM);
     };
 
-
+    /**
+     * Ensure the image is a gray scale before using this shader for best results
+     * */ 
     private static readonly fragmentShader = 
     `#version 300 es
     precision highp float;
@@ -61,10 +63,11 @@ class WebGLStructuredTensor implements RenderFilter {
     out vec4 outColor;
 
     void main () {
+
         vec2 onePixel = vec2(1) / vec2(textureSize(u_image, 0));
 
         vec4 colorSumX =     
-        texture(u_image, v_texCoord + onePixel * vec2(-1, -1)) *  1.0+ 
+        texture(u_image, v_texCoord + onePixel * vec2(-1, -1)) *  1.0 + 
         texture(u_image, v_texCoord + onePixel * vec2(0, -1)) * 2.0 + 
         texture(u_image, v_texCoord + onePixel * vec2(1, -1)) * 1.0 +
         texture(u_image, v_texCoord + onePixel * vec2(-1, 0)) * 0.0 +
@@ -85,14 +88,10 @@ class WebGLStructuredTensor implements RenderFilter {
         texture(u_image, v_texCoord + onePixel * vec2(0, 1)) * 0.0 +
         texture(u_image, v_texCoord + onePixel * vec2(1, 1)) * -1.0;
 
-        // Gradients
-        float gradX = colorSumX.r;
-        float gradY = colorSumY.r;
-
         // Structured Tensor;
-        float xx = gradX * gradX;
-        float xy = gradX * gradY;
-        float yy = gradY * gradY;
+        float xx = dot(colorSumX.rgb, colorSumX.rgb);
+        float xy = dot(colorSumX.rgb, colorSumY.rgb);
+        float yy = dot(colorSumY.rgb, colorSumY.rgb);
 
         // Output structured Tensor
         outColor = vec4(xx, yy, xy, 1.0);

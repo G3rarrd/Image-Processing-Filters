@@ -4,6 +4,7 @@ import PostProcessingVertexShader from '../../vertexShaders/postProcessingVertex
 import WebGLShaderPass from "../webGLShaderPass";
 import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
+import { setUniformLocationError } from "../webGLGetUniformErrorText";
 
 class WebGLEigenvector implements RenderFilter {
     private readonly wgl : WebGLCore;
@@ -40,83 +41,47 @@ class WebGLEigenvector implements RenderFilter {
     
     private setUniforms (gl: WebGL2RenderingContext, program: WebGLProgram) : void {
         const TEX_NUM : number = 0;
+        const U_BLURRED_STRUCTURED_TENSOR : string = "u_blurred_structured_tensor";
+        const tensorLocation = gl.getUniformLocation(program, U_BLURRED_STRUCTURED_TENSOR);
 
-        const imageLocation = gl.getUniformLocation(program, "u_image");
-
-        if (!imageLocation) throw new Error("Image cannot be found");
-        gl.uniform1i(imageLocation, TEX_NUM);
+        if (!tensorLocation) throw new Error(setUniformLocationError(U_BLURRED_STRUCTURED_TENSOR));
+        gl.uniform1i(tensorLocation, TEX_NUM);
     };
-
+    /**
+     * Ensure the image is a blurred structured tensor
+    */
     private static readonly fragmentShader = 
     `#version 300 es
     precision mediump float;
 
-    uniform sampler2D u_image;
+    uniform sampler2D u_blurred_structured_tensor;
 
     out vec4 outColor;
     
     
     in vec2 v_texCoord;
 
-    vec2 complexSqrt (vec2 z) {
-        float x = z.x; // real number
-        float y = z.y; // imaginary number 
-
-        float magnitude = sqrt(x*x + y*y);
-        float angle = atan(y, x) / 2.0; // Phase angle; 
-
-        float realPart = magnitude * cos(angle);
-        float imagPart = magnitude * sin(angle);
-
-        return vec2(realPart, imagPart);
-    }
-
-    vec2 eigenvalue(vec3 tensor) {
-        float xx = tensor.r;
-        float yy = tensor.g;
-        float xy = tensor.b;
-
-        float trace = xx + yy;
-        float determinant = (xx * yy) - (xy*xy);
-        float discriminant = trace * trace - 4.0 * determinant;
-
-        float root1 = 0.0;
-        float root2 = 0.0;
-        if (discriminant >= 0.0) {
-            root1 = (trace + sqrt(discriminant)) / 2.0;
-            root2 = (trace - sqrt(discriminant)) / 2.0;
-            return vec2(root1, root2);
-        } 
-        
-        float realPart = trace / 2.0;
-        float imagPart = sqrt(-discriminant) / 2.0;
-        
-        return vec2(realPart, imagPart);
-    }
 
     
 
     void main () {
-        vec4 color = texture(u_image, v_texCoord);
-        vec3 tensor = color.rgb;
-        vec2 lambdas = eigenvalue(tensor);
-
-        float selectedLambda = abs(lambdas.x) < abs(lambdas.y) ? lambdas.x : lambdas.y;
-        float xx = tensor.r; // xx component
-        float yy = tensor.g; // yy component
-        float xy = tensor.b; // xy component
-
-        vec2 eigenvector = vec2(0.0);
-        if (abs(xy) > 1.0e-7) {
-            eigenvector = normalize(vec2(selectedLambda - yy, xy));
-        } else {
-            // Fallback to x- or y-axis aligned direction
-            eigenvector = vec2(0.0, 1.0);
-        }
-            
+        vec4 color = texture(u_blurred_structured_tensor, v_texCoord);
+        vec3 tensor = color.xyz; // blurred tensor values
+        float trace = tensor.y + tensor.x ;
+        float det_term = sqrt((tensor.x - tensor.y)*(tensor.x - tensor.y) + 4.0 * tensor.z* tensor.z);
         
+        float lambda1 =  0.5 * (trace + det_term);
+        float lambda2 =  0.5 * (trace - det_term );
 
-        outColor = vec4((eigenvector), 0.0, 1.0);
+        vec2 vector = vec2(lambda1 - tensor.x, -tensor.z);
+        vec2 t = (length(vector) > 0.0) 
+                    ? normalize(vector) 
+                    : (vector.x > vector.y ? vec2(1.0, 0.0) 
+                    : vec2(0.0, 1.0));
+
+        float A = lambda1 + lambda2 > 0.0 ? lambda1 - lambda2 / lambda1 + lambda2 : 0.0;
+
+        outColor = vec4((t), A, 1.0);
     }
     `;
 
