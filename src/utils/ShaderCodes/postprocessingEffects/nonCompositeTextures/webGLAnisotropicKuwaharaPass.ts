@@ -6,7 +6,7 @@ import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertex
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
 import WebGLShaderPass from "../webGLShaderPass";
 
-class WebGLGeneralizedKuwahara {
+class WebGLAnisotropicKuwaharaPass {
     private readonly wgl : WebGLCore;
     private readonly framebufferPool: FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;
@@ -17,7 +17,7 @@ class WebGLGeneralizedKuwahara {
     private zeta : number = 2;
     private zeroCrossing : number = 1;
     public config : RangeSlidersProps[];
-    
+
     constructor (
         wgl: WebGLCore, 
         framebufferPool: FramebufferPool,
@@ -34,8 +34,8 @@ class WebGLGeneralizedKuwahara {
         ]
     }
 
-    public init() : void {
-        this.program = this.wgl.compileAndLinkProgram(this.postProcessing.shader, WebGLGeneralizedKuwahara.fragmentShader, "Generalized Kuwahara shader")
+    public init () {
+        this.program = this.wgl.compileAndLinkProgram(this.postProcessing.shader, WebGLAnisotropicKuwaharaPass.fragmentShader, "Anisotropic Kuwahara pass shader")
     }
 
     public setAttributes (
@@ -52,8 +52,15 @@ class WebGLGeneralizedKuwahara {
         this.zeroCrossing = zeroCrossing * (Math.PI / 8.0);
     }
 
+
     public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
-        if (!this.program) throw new Error("Generalized Kuwahara program is not compiled");
+        /**
+         * Accepts 2 textures
+         * @param inputTextures[0] : Original Image Texture
+         * @param inputTextures[1] : Edge Tangent Flow (From structured Tensor) of the image
+        */
+
+        if (!this.program) throw new Error("Anisotropic Kuwahara pass program is not compiled");
         
         const pass = new WebGLShaderPass(
             this.wgl, 
@@ -66,47 +73,56 @@ class WebGLGeneralizedKuwahara {
         return pass.execute(inputTextures, textureWidth, textureHeight);
     }
 
-    private setUniforms(gl: WebGL2RenderingContext, program: WebGLProgram)  {
-        const TEX_NUM : number = 0; 
-        const U_IMAGE = 'u_image';
-        const U_KERNEL_SIZE = 'u_kernel_size';
-        const U_ZETA : string = 'u_zeta';
-        const U_ZERO_CROSSING : string = 'u_zero_crossing';
-        const U_HARDNESS : string = 'u_hardness';
-        const U_Q : string = 'u_q';
 
-        const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE);
-        const kernelSizeLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL_SIZE);
-        const zetaLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_ZETA);
-        const zeroCrossingLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_ZERO_CROSSING);
-        const hardnessLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_HARDNESS);
-        const qLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_Q);
-        
-        if (imageLocation === null) throw new Error(setUniformLocationError(U_IMAGE));
-        if (kernelSizeLocation === null) throw new Error(setUniformLocationError(U_KERNEL_SIZE ));
-        if (zetaLocation === null) throw new Error(setUniformLocationError(U_ZETA));
-        if (zeroCrossingLocation === null) throw new Error(setUniformLocationError(U_ZERO_CROSSING));
-        if (hardnessLocation === null) throw new Error(setUniformLocationError(U_HARDNESS));
-        if (qLocation === null) throw new Error(setUniformLocationError(U_Q));
-        
-        gl.uniform1i(imageLocation, TEX_NUM);
-        gl.uniform1i(kernelSizeLocation, this.kernelSize);
-        gl.uniform1f(zetaLocation, this.zeta / (this.kernelSize / 2));
-        gl.uniform1f(zeroCrossingLocation, this.zeroCrossing);
-        gl.uniform1f(hardnessLocation, this.hardness);
-        gl.uniform1f(qLocation, this.q);
-    }
+    private setUniforms(gl: WebGL2RenderingContext, program: WebGLProgram)  {
+            const TEX_NUM : number = 0; 
+            const U_IMAGE = 'u_image';
+            const U_ETF = 'u_etf';
+            const U_KERNEL_SIZE = 'u_kernel_size';
+            const U_ZETA : string = 'u_zeta';
+            const U_ZERO_CROSSING : string = 'u_zero_crossing';
+            const U_HARDNESS : string = 'u_hardness';
+            const U_Q : string = 'u_q';
+    
+            const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE);
+            const etfLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_ETF);
+            const kernelSizeLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL_SIZE);
+            const zetaLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_ZETA);
+            const zeroCrossingLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_ZERO_CROSSING);
+            const hardnessLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_HARDNESS);
+            const qLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_Q);
+            
+            if (imageLocation === null) throw new Error(setUniformLocationError(U_IMAGE));
+            if (etfLocation === null) throw new Error(setUniformLocationError(U_ETF));
+            if (kernelSizeLocation === null) throw new Error(setUniformLocationError(U_KERNEL_SIZE ));
+            if (zetaLocation === null) throw new Error(setUniformLocationError(U_ZETA));
+            if (zeroCrossingLocation === null) throw new Error(setUniformLocationError(U_ZERO_CROSSING));
+            if (hardnessLocation === null) throw new Error(setUniformLocationError(U_HARDNESS));
+            if (qLocation === null) throw new Error(setUniformLocationError(U_Q));
+            
+            gl.uniform1i(imageLocation, TEX_NUM);
+            gl.uniform1i(etfLocation, TEX_NUM + 1);
+            gl.uniform1i(kernelSizeLocation, this.kernelSize);
+            gl.uniform1f(zetaLocation, this.zeta / (this.kernelSize / 2));
+            gl.uniform1f(zeroCrossingLocation, this.zeroCrossing);
+            gl.uniform1f(hardnessLocation, this.hardness);
+            gl.uniform1f(qLocation, this.q);
+        }
+    
 
     private static readonly fragmentShader =
     `#version 300 es
     precision mediump float;
     
     uniform sampler2D u_image;
+    uniform sampler2D u_etf;
+
     uniform int u_kernel_size;
     uniform float u_zeta;
     uniform float u_zero_crossing;
     uniform float u_hardness;
     uniform float u_q;
+    uniform float u_alpha;
 
 
     in vec2 v_texCoord;
@@ -115,6 +131,7 @@ class WebGLGeneralizedKuwahara {
     const float sqrt2_2 = sqrt(2.0) / 2.0;
     void main() {
         vec4 pixelColor = texture(u_image, v_texCoord);
+        vec4 etfInfo = texture(u_etf, v_texCoord);
         vec2 texelSize = 1.0 / vec2(textureSize(u_image, 0));
         
         int k;
@@ -125,6 +142,32 @@ class WebGLGeneralizedKuwahara {
             m[i] = vec4(0.0);
             s[i] = vec3(0.0);
         }
+        vec2 gradient = etfInfo.xy;
+        float phi = atan(gradient.y, gradient.x);
+        float Anisotropy = etfInfo.z;
+
+        float A = u_alpha / (u_alpha + Anisotropy);
+        float B = (u_alpha + Anisotropy) / u_alpha;
+
+        float cos_phi = cos(phi);
+        float sin_phi = sin(phi);
+
+        mat2 S = mat2(
+        A, 0, 
+        0, B
+        );
+
+        mat2 R_phi = mat2(
+        cos_phi, -sin_phi, 
+        sin_phi, cos_phi
+        );
+
+        mat2 SR = S * R_phi;
+
+        // Axis-Aligned Bounding Box (AABB) of a Rotated Ellipse
+        // Calculates the smallest rectangle aligned to the x/y axes that fully contains a rotated ellipse
+        int max_x = int(sqrt(A * A * cos_phi * cos_phi + B * B * sin_phi * sin_phi));
+        int max_y = int(sqrt(A * A * sin_phi * sin_phi + B * B * cos_phi * cos_phi));
 
         int kernelRadius = u_kernel_size / 2;
         float zeta = u_zeta ;
@@ -132,12 +175,12 @@ class WebGLGeneralizedKuwahara {
         float sinZeroCrossing = sin(zeroCrossing);
         float eta = (zeta + cos(zeroCrossing)) / (sinZeroCrossing * sinZeroCrossing);
         
-        for (int y = -kernelRadius; y <= kernelRadius; y++) {
-            for (int x = -kernelRadius; x <= kernelRadius;x++) {
-                vec2 v = vec2(x, y) / float(kernelRadius);
+        for (int y = -max_y; y <= max_y; y++) {
+            for (int x = -max_x; x <= max_x; x++) {
+                vec2 v = SR * vec2(float(x), float(y));
                 vec3 c = texture(u_image, v_texCoord + (vec2(x, y) * texelSize)).rgb;
                 c = clamp(c, 0.0, 1.0);
-                float sum = 0.0;
+                float sum = 1e-6;
                 float w[8];
                 float z, vxx, vyy;
 
@@ -160,7 +203,7 @@ class WebGLGeneralizedKuwahara {
                 w[6] = z*z;
                 sum += w[6];
 
-                v = sqrt2_2 * vec2(v.x - v.y, v.x + v.y); // Rotate 45 degrees;
+                v = sqrt2_2  * vec2(v.x - v.y, v.x + v.y); // Rotate 45 degrees;
 
                 vxx = zeta - eta * v.x * v.x;
                 vyy = zeta - eta * v.y * v.y;
@@ -207,4 +250,4 @@ class WebGLGeneralizedKuwahara {
 }
 
 
-export default WebGLGeneralizedKuwahara;
+export default WebGLAnisotropicKuwaharaPass;
