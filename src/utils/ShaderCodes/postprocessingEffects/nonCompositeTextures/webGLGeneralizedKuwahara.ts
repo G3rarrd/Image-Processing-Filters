@@ -26,7 +26,7 @@ class WebGLGeneralizedKuwahara {
         this.postProcessing = new PostProcessingVertexShader();
         this.framebufferPool = framebufferPool;
         this.config = [
-            {max : 21, min : 3, label : "Radius", value : this.kernelSize, step : 2},
+            {max : 20, min : 4, label : "Radius", value : this.kernelSize, step : 2},
             {max : 200, min : 1, label : "Hardness", value : this.hardness, step : 1},
             {max : 21, min : 1, label : "Q", value : this.q, step : 1},
             {max : 20, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
@@ -114,7 +114,6 @@ class WebGLGeneralizedKuwahara {
 
     const float sqrt2_2 = sqrt(2.0) / 2.0;
     void main() {
-        vec4 pixelColor = texture(u_image, v_texCoord);
         vec2 texelSize = 1.0 / vec2(textureSize(u_image, 0));
         
         int k;

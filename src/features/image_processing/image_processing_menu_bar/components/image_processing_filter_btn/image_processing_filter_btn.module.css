@@ -1,6 +1,15 @@
+@import 'src\vars.module.css';
+
 .filter_btn{
-    background-color : violet;
-    padding : 0.25rem 1.25rem;
+    /* background-color : violet; */
+    background-color:  var(--color-black);
+    padding : 0.25rem;
+    font-size: var(--font-menu-btn-size);
+    border-radius: 0.1rem;
+}
+
+.filter_btn:hover {
+    background-color: var(--color-black-hover);
 }
 
 .filter_btn_container {
@@ -13,12 +22,21 @@
     position: absolute;
     top : 100%;
     left : 0;
-    background-color: green;
+    background-color: var(--color-black-2);
     z-index: 1;
     flex-grow: 1;
     white-space: nowrap; /* Prevents text wrap */
     list-style-type: none;
     display: none;
+
+    font-size: var(--font-menu-btn-size);
+
+    border-radius: 0.2rem;
+    overflow: hidden;
+
+    box-shadow: 0px 0px 3px 1px rgba(0,0,0,0.74);
+    -webkit-box-shadow: 0px 0px 3px 1px rgba(0,0,0,0.74);
+    -moz-box-shadow: 0px 0px 3px 1px rgba(0,0,0,0.74);
 }
 
 .filter_btn_dropdown.hidden {
@@ -31,11 +49,15 @@
 }
 
 .filter_btn_dropdown li{
-    padding : 0.25rem 1rem ;
-    background-color: blue;
+    padding : 0.25rem 0.5rem ;
+    cursor:default;
+    
+    /* background-color: blue; */
 }
 
 .filter_btn_dropdown li:hover {
-    background-color: red;
+    background-color: var(--color-black-hover);
 }
+
+
 

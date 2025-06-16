@@ -4,9 +4,10 @@ import FramebufferPool from "../../../framebuffer_textures/framebufferPool";
 import WebGLCore from "../../../webGLCore";
 import PostProcessingVertexShader from "../../vertexShaders/postProcessingVertexShader";
 import { setUniformLocationError } from "../webGLGetUniformErrorText";
+import { RenderFilter } from "../webGLRenderFilter";
 import WebGLShaderPass from "../webGLShaderPass";
 
-class WebGLAnisotropicKuwaharaPass {
+class WebGLAnisotropicKuwaharaPass implements RenderFilter {
     private readonly wgl : WebGLCore;
     private readonly framebufferPool: FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;
@@ -16,6 +17,7 @@ class WebGLAnisotropicKuwaharaPass {
     private q : number = 18;
     private zeta : number = 2;
     private zeroCrossing : number = 1;
+    private alpha : number = 1;
     public config : RangeSlidersProps[];
 
     constructor (
@@ -26,11 +28,12 @@ class WebGLAnisotropicKuwaharaPass {
         this.postProcessing = new PostProcessingVertexShader();
         this.framebufferPool = framebufferPool;
         this.config = [
-            {max : 21, min : 3, label : "Radius", value : this.kernelSize, step : 2},
+            {max : 20, min : 4, label : "Radius", value : this.kernelSize, step : 2},
             {max : 200, min : 1, label : "Hardness", value : this.hardness, step : 1},
             {max : 21, min : 1, label : "Q", value : this.q, step : 1},
             {max : 20, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
             {max : 2, min : 0.01, label : "Zero Crossing", value : this.zeroCrossing, step : 0.01},
+            {max : 2, min : 0.01, label : "Alpha", value : this.alpha, step : 1},
         ]
     }
 
@@ -43,13 +46,15 @@ class WebGLAnisotropicKuwaharaPass {
         hardness : number,
         q : number,
         zeta : number,
-        zeroCrossing : number
+        zeroCrossing : number,
+        alpha : number,
     ) {
         this.kernelSize = kernelSize;
         this.hardness = hardness;
         this.q  = q;
         this.zeta = zeta;
         this.zeroCrossing = zeroCrossing * (Math.PI / 8.0);
+        this.alpha = alpha;
     }
 
 
@@ -94,7 +99,7 @@ class WebGLAnisotropicKuwaharaPass {
             
             if (imageLocation === null) throw new Error(setUniformLocationError(U_IMAGE));
             if (etfLocation === null) throw new Error(setUniformLocationError(U_ETF));
-            if (kernelSizeLocation === null) throw new Error(setUniformLocationError(U_KERNEL_SIZE ));
+            if (kernelSizeLocation === null) throw new Error(setUniformLocationError(U_KERNEL_SIZE));
             if (zetaLocation === null) throw new Error(setUniformLocationError(U_ZETA));
             if (zeroCrossingLocation === null) throw new Error(setUniformLocationError(U_ZERO_CROSSING));
             if (hardnessLocation === null) throw new Error(setUniformLocationError(U_HARDNESS));
@@ -124,57 +129,62 @@ class WebGLAnisotropicKuwaharaPass {
     uniform float u_q;
     uniform float u_alpha;
 
-
     in vec2 v_texCoord;
     out vec4 outColor;
 
     const float sqrt2_2 = sqrt(2.0) / 2.0;
     void main() {
-        vec4 pixelColor = texture(u_image, v_texCoord);
-        vec4 etfInfo = texture(u_etf, v_texCoord);
         vec2 texelSize = 1.0 / vec2(textureSize(u_image, 0));
+        int kernelRadius = u_kernel_size / 2;
+        float r = float(kernelRadius);
+        
         
         int k;
         vec4 m[8];
         vec3 s[8];
-
+        
+        // Build mean sum and standard deviation sum matrices for each sector
         for (int i = 0; i < 8; ++i) {
             m[i] = vec4(0.0);
             s[i] = vec3(0.0);
         }
+            
+        // Get eigenvector of least change and anisotropy from the ETF
+        vec4 etfInfo = texture(u_etf, v_texCoord);
         vec2 gradient = etfInfo.xy;
-        float phi = atan(gradient.y, gradient.x);
+        float phi = -atan(gradient.y, gradient.x);
         float Anisotropy = etfInfo.z;
 
-        float A = u_alpha / (u_alpha + Anisotropy);
-        float B = (u_alpha + Anisotropy) / u_alpha;
+        // kernel axes with clamping calculation
+        float a = float(kernelRadius) * (u_alpha / (u_alpha + Anisotropy));
+        float b = float(kernelRadius) * ((u_alpha + Anisotropy) / u_alpha);
+        a = clamp(a, r, 2.0*r);
+        b = clamp(b, 0.5 * r, r);
 
+        // Build Transformation Matrices : Transforms the circle to an ellipse
         float cos_phi = cos(phi);
         float sin_phi = sin(phi);
-
         mat2 S = mat2(
-        A, 0, 
-        0, B
+        1.0/a, 0, 
+        0, 1.0/b
         );
-
         mat2 R_phi = mat2(
         cos_phi, -sin_phi, 
         sin_phi, cos_phi
         );
-
         mat2 SR = S * R_phi;
 
         // Axis-Aligned Bounding Box (AABB) of a Rotated Ellipse
         // Calculates the smallest rectangle aligned to the x/y axes that fully contains a rotated ellipse
-        int max_x = int(sqrt(A * A * cos_phi * cos_phi + B * B * sin_phi * sin_phi));
-        int max_y = int(sqrt(A * A * sin_phi * sin_phi + B * B * cos_phi * cos_phi));
+        int max_x = int(sqrt(a * a * cos_phi * cos_phi + b * b * sin_phi * sin_phi));
+        int max_y = int(sqrt(a * a * sin_phi * sin_phi + b * b * cos_phi * cos_phi));
 
-        int kernelRadius = u_kernel_size / 2;
-        float zeta = u_zeta ;
-        float zeroCrossing = u_zero_crossing;
-        float sinZeroCrossing = sin(zeroCrossing);
-        float eta = (zeta + cos(zeroCrossing)) / (sinZeroCrossing * sinZeroCrossing);
-        
+        // Precompute filter parameters
+        float sinZeroCrossing = sin(u_zero_crossing);
+        float eta = (u_zeta + cos(u_zero_crossing)) / (sinZeroCrossing * sinZeroCrossing);
+        float hardnessScale = u_hardness * 1000.0;
+
+
         for (int y = -max_y; y <= max_y; y++) {
             for (int x = -max_x; x <= max_x; x++) {
                 vec2 v = SR * vec2(float(x), float(y));
@@ -184,8 +194,8 @@ class WebGLAnisotropicKuwaharaPass {
                 float w[8];
                 float z, vxx, vyy;
 
-                vxx = zeta - eta * v.x * v.x;
-                vyy = zeta - eta * v.y * v.y;
+                vxx =  u_zeta - eta * v.x * v.x;
+                vyy =  u_zeta - eta * v.y * v.y;
 
                 z = max(0.0, v.y + vxx);
                 w[0] = z*z;
@@ -205,8 +215,8 @@ class WebGLAnisotropicKuwaharaPass {
 
                 v = sqrt2_2  * vec2(v.x - v.y, v.x + v.y); // Rotate 45 degrees;
 
-                vxx = zeta - eta * v.x * v.x;
-                vyy = zeta - eta * v.y * v.y;
+                vxx = u_zeta - eta * v.x * v.x;
+                vyy = u_zeta - eta * v.y * v.y;
 
                 z = max(0.0, v.y + vxx);
                 w[1] = z*z;
@@ -240,7 +250,7 @@ class WebGLAnisotropicKuwaharaPass {
             s[k] = abs(s[k] / m[k].a - m[k].rgb * m[k].rgb);
 
             float sigma2 = s[k].r + s[k].g + s[k].b;
-            float w = 1.0 / (1.0 + pow(u_hardness * 1000.0 * sigma2, 0.5 * u_q));
+            float w = 1.0 / (1.0 + pow(hardnessScale * sigma2, 0.5 * u_q));
             finalColor += vec4(m[k].rgb * w, w);
         }
 

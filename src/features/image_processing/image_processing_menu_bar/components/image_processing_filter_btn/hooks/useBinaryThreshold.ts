@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { ImageProcessingContext } from "../../../../components/image_processing_context/image_processing_provider";
 import WebGLBinaryThreshold from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLBinaryThresholding";
+import WebGLRenderer from "../../../../../../utils/Scene/webGLRender";
 function useBinaryThreshold () {
     const {rendererRef, setOpenFilterControl, setSliderConfigs, filterFuncRef} = useContext(ImageProcessingContext);
     
@@ -10,7 +11,7 @@ function useBinaryThreshold () {
         setOpenFilterControl(() => true);
 
         const binaryThreshold : WebGLBinaryThreshold = rendererRef.current.compiledFilters.binaryThreshold;
-        const renderer = rendererRef.current;
+        const renderer : WebGLRenderer = rendererRef.current;
         
         setSliderConfigs([...binaryThreshold.config]); // Helps initiate the slider(s)
 

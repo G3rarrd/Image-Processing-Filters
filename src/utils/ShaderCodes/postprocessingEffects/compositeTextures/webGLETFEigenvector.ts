@@ -44,7 +44,7 @@ class WebGLETFEigenvector implements RenderFilter{
         const blurStructuredTensorFbo = gBlur.render([structuredTensorFbo.getTexture()], w, h);
         this.framebufferPool.release(structuredTensorFbo) // structuredTensorFbo is no longer needed
 
-        // Step three: Get the eigenvalue of the structured tensor to get the edge tangent flow
+        // Step three: Get the eigenvector and anisotropy of the structured tensor to get the edge tangent flow
         const etfFbo = eigenvector.render([blurStructuredTensorFbo.getTexture()], w, h);
         this.framebufferPool.release(blurStructuredTensorFbo) // blurStructuredTensorFbo is no longer needed
         

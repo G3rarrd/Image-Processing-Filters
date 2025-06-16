@@ -1,3 +1,5 @@
+@import 'src\vars.module.css';
+
 .view_btn_container {
     position: relative;
     display: flex;
@@ -5,8 +7,10 @@
 }
 
 .view_btn {
-    background-color: violet;
-    padding : 0.25rem 1.25rem;
+    /* background-color: violet; */
+    padding : 0.25rem;
+    margin : 0.25rem;
+    font-size: var(--font-menu-btn-size);
 }
 
 .view_btn_dropdown {
@@ -19,6 +23,8 @@
     white-space: nowrap; /* Prevents text wrap */
     list-style-type: none;
     display: none;
+
+
 }
 
 .hidden {

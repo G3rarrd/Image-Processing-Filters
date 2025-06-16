@@ -1,0 +1,11 @@
+:root {
+    --color-black : #222;
+    --color-black-hover : rgba(143, 145, 153, 0.1);
+    --color-black-2 : hsl(0, 0%, 20%);
+    --primary-color : #769CDF;
+    --secondary-color: #8991A2;
+    --neutral-variant : hsl(228, 5%, 58%);
+
+    --font-menu-btn-size : 1rem;
+
+}

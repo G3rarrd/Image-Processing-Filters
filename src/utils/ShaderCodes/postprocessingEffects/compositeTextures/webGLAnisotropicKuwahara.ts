@@ -1,19 +1,25 @@
-import GaussianCalculations from "../../../math/gaussianCalculation";
 import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
 import WebGLCompileFilters from "../webGLCompileFilters";
 import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
 import { RangeSlidersProps } from "../../../../types/slider";
+import WebGLETFEigenvector from "./webGLETFEigenvector";
+import WebGLGrayScale from "../nonCompositeTextures/webGLGrayscale";
+import WebGLAnisotropicKuwaharaPass from "../nonCompositeTextures/webGLAnisotropicKuwaharaPass";
 
-class WebGLGaussianBlur implements RenderFilter{
+class WebGLAnisotropicKuwahara implements RenderFilter{
     private readonly wgl : WebGLCore;
     private readonly compiledFilters : WebGLCompileFilters;
     private readonly framebufferPool: FramebufferPool;
+    private readonly etfEigenvectorAnisotropicMap : WebGLETFEigenvector;
+    private kernelSize : number = 5;
+    private hardness : number = 100;
+    private sharpness : number = 18;
+    private zeta : number = 2;
+    private zeroCrossing : number = 1;
+    private alpha : number = 1;
     private sigma : number = 1.6;
-    private kernelSize : number = 3;
-    private gaussianCalc : GaussianCalculations;
-    private kernel1D : number[] = [0, 1, 0];
     public config : RangeSlidersProps[];
 
     constructor (
@@ -23,21 +29,38 @@ class WebGLGaussianBlur implements RenderFilter{
     ) {
         this.wgl = wgl;
         this.framebufferPool = framebufferPool;
-        this.gaussianCalc = new GaussianCalculations();
         this.compiledFilters = compiledFilters;
-        this.config = [{
-            min: 0.1,
-            max: 60,
-            step : 0.001,
-            value: this.sigma,
-            label: "Radius"
-        }];
+        
+        this.config = [
+            {max : 50, min : 4, label : "Radius", value : this.kernelSize, step : 2},
+            {max : 200, min : 1, label : "Hardness", value : this.hardness, step : 1},
+            {max : 21, min : 1, label : "Sharpness", value : this.sharpness, step : 1},
+            {max : 20, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
+            {max : 2, min : 0.01, label : "Zero Crossing", value : this.zeroCrossing, step : 0.01},
+            {max : 2, min : 0.01, label : "Alpha", value : this.alpha, step : 0.01},
+            {min: 0.1, max: 60, step : 0.001, value: this.sigma, label: "Sigma C"}
+        ]
+        this.etfEigenvectorAnisotropicMap = new WebGLETFEigenvector(this.wgl, this.compiledFilters, this.framebufferPool);
+
+
     }
 
-    public setAttributes(sigma : number) {
+    public setAttributes (
+        kernelSize : number,
+        hardness : number,
+        sharpness : number,
+        zeta : number,
+        zeroCrossing : number,
+        alpha : number,
+        sigma : number,
+    ) {
+        this.kernelSize = kernelSize;
+        this.hardness = hardness;
+        this.sharpness  = sharpness;
+        this.zeta = zeta;
+        this.zeroCrossing = zeroCrossing * (Math.PI / 8.0);
+        this.alpha = alpha;
         this.sigma = sigma;
-        this.kernelSize = this.gaussianCalc.getKernelSize(this.sigma);
-        this.kernel1D = this.gaussianCalc.get1DGaussianKernel(this.kernelSize, sigma) ;
     }
     
     public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer{
@@ -47,18 +70,21 @@ class WebGLGaussianBlur implements RenderFilter{
         */
         const w : number = textureWidth;
         const h : number = textureHeight;
-        const gblurPass = this.compiledFilters.gaussianBlurPass;
+        const gray : WebGLGrayScale = this.compiledFilters.grayScale;
+        const anisotropicKuwaharaPass : WebGLAnisotropicKuwaharaPass = this.compiledFilters.anisotropicKuwaharaPass;
 
-        gblurPass.setAttributes(this.kernel1D, [0, 1]);
-        const pass1Fbo = gblurPass.render([inputTextures[0]], w, h);
+        const grayFbo = gray.render([inputTextures[0]], w, h);
+        
+        this.etfEigenvectorAnisotropicMap.setAttributes(this.sigma);
+        const etfFbo = this.etfEigenvectorAnisotropicMap.render([grayFbo.getTexture()], w, h);
+        this.framebufferPool.release(grayFbo);
 
+        anisotropicKuwaharaPass.setAttributes(this.kernelSize, this.hardness, this.sharpness, this.zeta, this.zeroCrossing, this.alpha);
+        const anisotropicKuwaharaFbo = anisotropicKuwaharaPass.render([inputTextures[0], etfFbo.getTexture()], w, h);
+        this.framebufferPool.release(etfFbo);
 
-        gblurPass.setAttributes(this.kernel1D, [1, 0]);
-        const finalPassFbo = gblurPass.render([pass1Fbo.getTexture()], w, h);
-        this.framebufferPool.release(pass1Fbo) // pass1Fbo is not needed again
-
-        return finalPassFbo;
+        return anisotropicKuwaharaFbo;
     }
 }
 
-export default WebGLGaussianBlur;
+export default WebGLAnisotropicKuwahara;

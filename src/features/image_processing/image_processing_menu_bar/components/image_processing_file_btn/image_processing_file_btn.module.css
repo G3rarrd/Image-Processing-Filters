@@ -1,8 +1,57 @@
+@import 'src\vars.module.css';
+
 .file_btn{
-    background-color: violet;
-    padding : 0.25rem 1.25rem;
+    /* background-color: violet; */
+    padding : 0.25rem;
+    margin : 0.25rem;
+    font-size: var(--font-menu-btn-size);
+}
+
+.file_btn .active{
+    
+}
+
+.file_btn:hover {
+    background-color: var(--color-black-hover );
 }
 
 .file_btn_container{
-    
+
+}
+
+.file_btn{}
+
+
+.view_btn {
+    background-color: transparent;
+    padding : 0.25rem 1.25rem;
+}
+
+.file_btn_dropdown{
+    position: absolute;
+    top : 100%;
+    left : 0;
+    background-color: green;
+    z-index: 1;
+    flex-grow: 1;
+    white-space: nowrap; /* Prevents text wrap */
+    list-style-type: none;
+    display: none;
+}
+
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: flex;
+    flex-direction: column;
+}
+
+.view_btn_dropdown li{
+    padding : 0.25rem 1rem ;
+    background-color: blue;
+}
+.view_btn_dropdown li:hover {
+    background-color: red;
 }

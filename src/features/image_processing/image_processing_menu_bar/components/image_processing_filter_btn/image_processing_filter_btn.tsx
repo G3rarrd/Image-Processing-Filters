@@ -1,11 +1,9 @@
 import { useContext, useRef, useState } from 'react';
-import styles from './image_processing_filter_btn.module.css';
 import useGrayscale from './hooks/useGrayscale';
 import useInvert from './hooks/useInvert';
 import useSobel from './hooks/useSobel';
 import useSharpen from './hooks/useSharpen';
 import useEmboss from './hooks/useEmboss';
-import { useHotkeys } from 'react-hotkeys-hook';
 import useQuantization from './hooks/useQuantization';
 import useDithering from './hooks/useDithering';
 import useBinaryThreshold from './hooks/useBinaryThreshold';
@@ -18,7 +16,12 @@ import { ImageProcessingContext } from '../../../components/image_processing_con
 import { useDropdownExit } from '../../hooks/useDropdownExit';
 import useKuwahara from './hooks/useKuwahara';
 import useGeneralizedKuwahara from './hooks/useGeneralizedKuwahara';
+import useAnisotropicKuwahara from './hooks/useAnisotropicKuwahara';
 
+
+import { useHotkeys } from 'react-hotkeys-hook';
+import baseStyles from '../image_processing_menu_btns_base.module.css';
+// import styles from './image_processing_filter_btn.module.css';
 const ImageProcessingFilterBtn = () => {
     const {rendererRef} = useContext(ImageProcessingContext);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -31,7 +34,7 @@ const ImageProcessingFilterBtn = () => {
         rendererRef.current.renderScene();
     });
 
-    useHotkeys('ctrl+y', () => {
+    useHotkeys('ctrl+shift+z', () => {
         if (! rendererRef || ! rendererRef.current) return;
         rendererRef.current.holdCurrentTexture = rendererRef.current.historyStack.redo();
         rendererRef.current.currentTexture = rendererRef.current.holdCurrentTexture;
@@ -53,6 +56,7 @@ const ImageProcessingFilterBtn = () => {
     const {handleFBLClick} = useFBL();
     const {handleKuwaharaClick} = useKuwahara();
     const {handleGeneralizedKuwaharaClick} = useGeneralizedKuwahara();
+    const {handleAnisotropicKuwaharaClick} = useAnisotropicKuwahara();
 
     const filterOptions = [
         { filter: 'Grayscale', handler: handleGrayscale },
@@ -70,9 +74,10 @@ const ImageProcessingFilterBtn = () => {
         { filter: 'FBL', handler: handleFBLClick },
         { filter: 'Kuwahara', handler: handleKuwaharaClick},
         { filter: 'Generalized Kuwahara', handler: handleGeneralizedKuwaharaClick},
+        { filter: 'Anisotropic Kuwahara', handler: handleAnisotropicKuwaharaClick},
     ];
 
-    function handleClick () {
+    function handleDropdownClick () {
         setOpenDropdown(prev => !prev);
     }
 
@@ -80,11 +85,11 @@ const ImageProcessingFilterBtn = () => {
     
 
     return (
-        <div ref={dropdownRef} className={`${styles.filter_btn_container}`}>
-            <button  onClick={handleClick} className={`${styles.filter_btn}`}>Filter</button>
-            <ul className={`${styles.filter_btn_dropdown} ${openDropdown ? styles.visible : styles.hidden}`}>
+        <div ref={dropdownRef} className={`${baseStyles.btn_container}`}>
+            <button  onClick={handleDropdownClick} className={`${baseStyles.button} ${openDropdown ? baseStyles.active : baseStyles.inactive}`}>Filter</button>
+            <ul className={`${baseStyles.dropdown} ${openDropdown ? baseStyles.visible : baseStyles.hidden}`}>
                 {filterOptions.map(({filter, handler}) => (
-                    <li key={filter} onClick={() => {handler(); handleClick()}}>{filter}</li>
+                    <li key={filter} onClick={() => {handler();handleDropdownClick()}}>{filter}</li>
                 ))}
             </ul>
         </div>

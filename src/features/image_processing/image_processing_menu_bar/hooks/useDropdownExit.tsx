@@ -7,10 +7,11 @@ export function useDropdownExit(
     onOutsideClick: () => void
 ) {
     function handleClick (e : MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                onOutsideClick();
-            }
+        if (ref.current && !ref.current.contains(e.target as Node)) {
+            onOutsideClick();
         }
+    }
+    
     useEffect(() => {
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);

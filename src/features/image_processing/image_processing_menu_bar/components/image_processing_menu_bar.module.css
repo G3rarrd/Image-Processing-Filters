@@ -1,8 +1,10 @@
+@import '../../../../vars.module.css';
+
 .menu_bar{
     position: relative;
-    background-color: red;
+    background-color: var(--color-black);
 
-    
+
     /* Font style */
     font-size : 1.25rem;
     font-weight: 500;
@@ -10,10 +12,8 @@
     /* Display Style */
     display: flex;
     flex-direction: row;
-    justify-content: start;
-    gap: 2rem;
-
-    padding:0.25rem 0rem ;
+    width: 100%;
+    padding:0.1rem 0.1rem ;
 }
 
 .section_1{
@@ -23,7 +23,6 @@
     flex-direction: row;
     justify-content: start;
     align-items: center;
-    gap: 1rem;
 }
 
 .section_2{
@@ -31,7 +30,7 @@
     /* background-color: purple; */
     display: flex;
     flex-direction: row;
-    gap: 1.0rem;
-
-    border-left: 0.2rem solid yellow;
+    align-items: center;
+    gap : 0.25rem;
+    /* border-left: 0.2rem solid yellow; */
 }
