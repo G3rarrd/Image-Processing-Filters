@@ -12,10 +12,10 @@ class WebGLGeneralizedKuwahara {
     private readonly postProcessing : PostProcessingVertexShader;
     private program: WebGLProgram | null = null; 
     private kernelSize : number = 5;
-    private hardness : number = 100;
-    private q : number = 18;
-    private zeta : number = 2;
-    private zeroCrossing : number = 1;
+    private hardness : number = 50;
+    private q : number = 15;
+    private u_zeta : number = 2;
+    private zeroCrossing : number = 240;
     public config : RangeSlidersProps[];
     
     constructor (
@@ -26,11 +26,11 @@ class WebGLGeneralizedKuwahara {
         this.postProcessing = new PostProcessingVertexShader();
         this.framebufferPool = framebufferPool;
         this.config = [
-            {max : 20, min : 4, label : "Radius", value : this.kernelSize, step : 2},
-            {max : 200, min : 1, label : "Hardness", value : this.hardness, step : 1},
-            {max : 21, min : 1, label : "Sharpness", value : this.q, step : 1},
-            {max : 20, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
-            {max : 360, min :1, label : "Angle", value : this.zeroCrossing, step : 0.1},
+            {max : 30, min : 4, label : "Radius", value : this.kernelSize, step : 2},
+            {max : 100, min : 1, label : "Hardness", value : this.hardness, step : 1},
+            {max : 18, min : 1, label : "Sharpness", value : this.q, step : 1},
+            {max : 3, min : 1, label : "Zeta", value : this.u_zeta, step : 0.1},
+            {max : 360, min :180, label : "Angle", value : this.zeroCrossing, step : 0.1},
         ]
     }
 
@@ -42,13 +42,13 @@ class WebGLGeneralizedKuwahara {
         kernelSize : number,
         hardness : number,
         q : number,
-        zeta : number,
+        u_zeta : number,
         zeroCrossing : number
     ) {
         this.kernelSize = kernelSize;
         this.hardness = hardness;
         this.q  = q;
-        this.zeta = zeta;
+        this.u_zeta = u_zeta;
         this.zeroCrossing = zeroCrossing * (Math.PI / 8.0);
     }
 
@@ -70,29 +70,30 @@ class WebGLGeneralizedKuwahara {
         const TEX_NUM : number = 0; 
         const U_IMAGE = 'u_image';
         const U_KERNEL_SIZE = 'u_kernel_size';
-        const U_ZETA : string = 'u_zeta';
+        const U_u_zeta : string = 'u_zeta';
         const U_ZERO_CROSSING : string = 'u_zero_crossing';
         const U_HARDNESS : string = 'u_hardness';
         const U_Q : string = 'u_q';
 
         const imageLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_IMAGE);
         const kernelSizeLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_KERNEL_SIZE);
-        const zetaLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_ZETA);
+        const u_zetaLocation: WebGLUniformLocation | null = gl.getUniformLocation(program, U_u_zeta);
         const zeroCrossingLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_ZERO_CROSSING);
         const hardnessLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_HARDNESS);
         const qLocation : WebGLUniformLocation | null = gl.getUniformLocation(program, U_Q);
         
         if (imageLocation === null) throw new Error(setUniformLocationError(U_IMAGE));
         if (kernelSizeLocation === null) throw new Error(setUniformLocationError(U_KERNEL_SIZE ));
-        if (zetaLocation === null) throw new Error(setUniformLocationError(U_ZETA));
+        if (u_zetaLocation === null) throw new Error(setUniformLocationError(U_u_zeta));
         if (zeroCrossingLocation === null) throw new Error(setUniformLocationError(U_ZERO_CROSSING));
         if (hardnessLocation === null) throw new Error(setUniformLocationError(U_HARDNESS));
         if (qLocation === null) throw new Error(setUniformLocationError(U_Q));
         
+        this.zeroCrossing = (this.zeroCrossing * (Math.PI / 180)) / 8;
         gl.uniform1i(imageLocation, TEX_NUM);
         gl.uniform1i(kernelSizeLocation, this.kernelSize);
-        gl.uniform1f(zetaLocation, this.zeta / (this.kernelSize / 2));
-        gl.uniform1f(zeroCrossingLocation, this.zeroCrossing * Math.PI / 180);
+        gl.uniform1f(u_zetaLocation, this.u_zeta / (this.kernelSize / 2));
+        gl.uniform1f(zeroCrossingLocation, this.zeroCrossing);
         gl.uniform1f(hardnessLocation, this.hardness);
         gl.uniform1f(qLocation, this.q);
     }
@@ -126,22 +127,21 @@ class WebGLGeneralizedKuwahara {
         }
 
         int kernelRadius = u_kernel_size / 2;
-        float zeta = u_zeta ;
-        float zeroCrossing = u_zero_crossing;
-        float sinZeroCrossing = sin(zeroCrossing);
-        float eta = (zeta + cos(zeroCrossing)) / (sinZeroCrossing * sinZeroCrossing);
-        
+        float sinZeroCrossing = sin(u_zero_crossing);
+        float eta = (u_zeta + cos(u_zero_crossing)) / (sinZeroCrossing * sinZeroCrossing);
+
         for (int y = -kernelRadius; y <= kernelRadius; y++) {
             for (int x = -kernelRadius; x <= kernelRadius;x++) {
                 vec2 v = vec2(x, y) / float(kernelRadius);
-                vec3 c = texture(u_image, v_texCoord + (vec2(x, y) * texelSize)).rgb;
+                vec3 c = texture(u_image, v_texCoord + (vec2(x, y)  * texelSize)).rgb;
                 c = clamp(c, 0.0, 1.0);
-                float sum = 0.0;
+                float sum = 1e-12;
                 float w[8];
                 float z, vxx, vyy;
 
-                vxx = zeta - eta * v.x * v.x;
-                vyy = zeta - eta * v.y * v.y;
+                // Polynomial weights calculation
+                vxx = u_zeta - eta * v.x * v.x;
+                vyy = u_zeta - eta * v.y * v.y;
 
                 z = max(0.0, v.y + vxx);
                 w[0] = z*z;
@@ -161,8 +161,8 @@ class WebGLGeneralizedKuwahara {
 
                 v = sqrt2_2 * vec2(v.x - v.y, v.x + v.y); // Rotate 45 degrees;
 
-                vxx = zeta - eta * v.x * v.x;
-                vyy = zeta - eta * v.y * v.y;
+                vxx = u_zeta - eta * v.x * v.x;
+                vyy = u_zeta - eta * v.y * v.y;
 
                 z = max(0.0, v.y + vxx);
                 w[1] = z*z;

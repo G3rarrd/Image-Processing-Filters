@@ -12,7 +12,7 @@ class WebGLKuwahara implements RenderFilter {
     private readonly postProcessing : PostProcessingVertexShader;
     private program : WebGLProgram | null = null;
     private framebufferPool : FramebufferPool;
-    private kernelSize : number = 3;
+    private kernelSize : number = 5;
     public config : RangeSlidersProps[];
 
 

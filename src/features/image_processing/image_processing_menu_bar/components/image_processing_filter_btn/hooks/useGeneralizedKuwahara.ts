@@ -4,10 +4,11 @@ import WebGLRenderer from "../../../../../../utils/Scene/webGLRender";
 import WebGLGeneralizedKuwahara from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLGeneralizedKuwahara";
 
 function useGeneralizedKuwahara () {
-    const {rendererRef, setSliderConfigs,setOpenFilterControl, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, setSliderConfigs,setOpenFilterControl, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
     function handleGeneralizedKuwaharaClick () {
         if (! rendererRef || ! rendererRef.current) return;
-        
+        const filterName : string ="Generalized Kuwahara"; 
+        setFilterName(filterName);
         setOpenFilterControl(() => true);
         
         const renderer : WebGLRenderer = rendererRef.current;

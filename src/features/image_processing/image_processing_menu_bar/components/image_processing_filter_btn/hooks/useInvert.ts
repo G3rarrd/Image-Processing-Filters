@@ -3,11 +3,12 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLInvert from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLInvert";
 
 function useInvert() {
-    const {rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
 
     function handleInvert () {
         if (! rendererRef || ! rendererRef.current) return;
-
+        const filterName : string ="Invert"; 
+        setFilterName(filterName);
         const invert : WebGLInvert = rendererRef.current.compiledFilters.invert;
         const renderer = rendererRef.current;
         filterFuncRef.current = () => {};

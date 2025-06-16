@@ -3,13 +3,14 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLBinaryThreshold from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLBinaryThresholding";
 import WebGLRenderer from "../../../../../../utils/Scene/webGLRender";
 function useBinaryThreshold () {
-    const {rendererRef, setOpenFilterControl, setSliderConfigs, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, setOpenFilterControl, setSliderConfigs, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
     
     function handleBinaryThresholdClick() {
         if (!rendererRef || ! rendererRef.current) return;
 
         setOpenFilterControl(() => true);
-
+        const filterName : string ="Binary Threshold"; 
+        setFilterName(filterName);
         const binaryThreshold : WebGLBinaryThreshold = rendererRef.current.compiledFilters.binaryThreshold;
         const renderer : WebGLRenderer = rendererRef.current;
         

@@ -6,13 +6,14 @@ import WebGLCompileFilters from "../../../../../../utils/ShaderCodes/postprocess
 import FramebufferPool from "../../../../../../utils/framebuffer_textures/framebufferPool";
 
 function useXDoG () {
-    const {rendererRef, filterFuncRef, setSliderConfigs, setOpenFilterControl} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef, setSliderConfigs, setOpenFilterControl, setFilterName} = useContext(ImageProcessingContext);
     
     function handleXDoGClick() {
         if (!rendererRef || ! rendererRef.current) return;
         
         setOpenFilterControl(() => true);
-
+        const filterName : string ="xDoG"; 
+        setFilterName(filterName);
         const wgl : WebGLCore = rendererRef.current.wgl;
         const compiledFilter : WebGLCompileFilters = rendererRef.current.compiledFilters;
         const framebufferPool : FramebufferPool = rendererRef.current.framebufferPool;
@@ -20,7 +21,6 @@ function useXDoG () {
 
         const renderer = rendererRef.current;
         setSliderConfigs(() => [...xDoG.config]); // Helps initiate the slider(s)
-
         filterFuncRef.current = (configs) => {
             let sigmaE : number | undefined= configs.find(cfg => cfg.label === "Radius E")?.value;
             let sigmaM : number | undefined= configs.find(cfg => cfg.label === "Radius M")?.value;

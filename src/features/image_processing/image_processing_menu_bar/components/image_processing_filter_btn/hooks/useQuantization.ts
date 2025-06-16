@@ -3,11 +3,12 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLQuantization from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLQuantization";
 
 function useQuantization () {
-    const {rendererRef, setSliderConfigs, setOpenFilterControl, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, setSliderConfigs, setOpenFilterControl, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
     
     function handleQuantizationClick() {
         if (!rendererRef || ! rendererRef.current) return;
-
+        const filterName : string ="Quantization"; 
+        setFilterName(filterName);
         setOpenFilterControl(() => true);
 
         const quantization : WebGLQuantization = rendererRef.current.compiledFilters.quantization;

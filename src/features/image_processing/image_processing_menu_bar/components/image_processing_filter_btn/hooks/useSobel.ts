@@ -3,7 +3,7 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLSobel from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLSobel";
 
 function useSobel() {
-    const {rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
 
     function handleSobel () {
         if (! rendererRef || ! rendererRef.current) return;
@@ -12,7 +12,8 @@ function useSobel() {
 
         const sobel : WebGLSobel = rendererRef.current.compiledFilters.sobel;
         const renderer = rendererRef.current;
-        
+        const filterName : string ="Sobel"; 
+        setFilterName(filterName);
         filterFuncRef.current = () => {};
         
         renderer.renderPipeline.addFilter(sobel);

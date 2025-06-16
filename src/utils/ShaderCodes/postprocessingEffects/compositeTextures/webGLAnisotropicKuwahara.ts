@@ -17,7 +17,7 @@ class WebGLAnisotropicKuwahara implements RenderFilter{
     private hardness : number = 100;
     private sharpness : number = 18;
     private zeta : number = 2;
-    private zeroCrossing : number = 1;
+    private zeroCrossing : number = 240; // degrees
     private alpha : number = 1;
     private sigma : number = 1.6;
     public config : RangeSlidersProps[];
@@ -32,11 +32,11 @@ class WebGLAnisotropicKuwahara implements RenderFilter{
         this.compiledFilters = compiledFilters;
         
         this.config = [
-            {max : 50, min : 4, label : "Radius", value : this.kernelSize, step : 2},
+            {max : 30, min : 4, label : "Radius", value : this.kernelSize, step : 2},
             {max : 200, min : 1, label : "Hardness", value : this.hardness, step : 1},
             {max : 21, min : 1, label : "Sharpness", value : this.sharpness, step : 1},
-            {max : 20, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
-            {max : 2, min : 0.01, label : "Zero Crossing", value : this.zeroCrossing, step : 0.01},
+            {max : 3, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
+            {max : 360, min :180, label : "Angle", value : this.zeroCrossing, step : 0.1},
             {max : 2, min : 0.01, label : "Alpha", value : this.alpha, step : 0.01},
             {min: 0.1, max: 60, step : 0.001, value: this.sigma, label: "Sigma C"}
         ]

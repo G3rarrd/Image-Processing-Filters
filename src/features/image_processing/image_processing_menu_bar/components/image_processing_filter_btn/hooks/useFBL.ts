@@ -6,13 +6,14 @@ import WebGLCompileFilters from "../../../../../../utils/ShaderCodes/postprocess
 import FramebufferPool from '../../../../../../utils/framebuffer_textures/framebufferPool';
 
 function useFBL () {
-    const {rendererRef,setOpenFilterControl, setSliderConfigs, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef,setOpenFilterControl, setSliderConfigs, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
 
     function handleFBLClick () {
         if (! rendererRef || ! rendererRef.current) return;
 
         setOpenFilterControl(() => true);
-
+        const filterName : string ="FBL"; 
+        setFilterName(filterName);
         const renderer = rendererRef.current;
         const wgl : WebGLCore = renderer.wgl;
         const compiledFilters : WebGLCompileFilters = renderer.compiledFilters;

@@ -39,6 +39,11 @@ class WebGLBinaryThreshold implements RenderFilter {
     }
 
     public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+        /**
+         * Accepts 1 texture
+         * @param inputTextures[0] : Original Image or edited Texture
+        */
+       
         if (!this.program) throw new Error("Binary Threshold program is not compiled");
         
         const pass = new WebGLShaderPass(

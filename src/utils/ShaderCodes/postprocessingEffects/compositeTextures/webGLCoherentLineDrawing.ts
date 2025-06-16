@@ -8,7 +8,7 @@ import WebGLCompileFilters from "../webGLCompileFilters";
 import { RangeSlidersProps } from "../../../../types/slider";
 
 
-class WebGLFDoG implements RenderFilter{
+class WebGLCoherentLineDrawing implements RenderFilter{
     private static readonly SCALAR : number = 1.6; // for sigmaS according to the paper
     private readonly wgl : WebGLCore;
     private readonly compiledFilters : WebGLCompileFilters;
@@ -20,8 +20,8 @@ class WebGLFDoG implements RenderFilter{
     private sigmaC : number = 1.6;
     private sigmaM : number = 1.5;
     private tau : number = 0.92;
-    private iteration : number = 1;
-    private etfKernelSize : number = 3;
+    private iteration : number = 2;
+    private etfKernelSize : number = 7;
     public config : RangeSlidersProps[];
     
     constructor (
@@ -34,7 +34,7 @@ class WebGLFDoG implements RenderFilter{
         this.compiledFilters = compiledFilters;
         this.etf = new WebGLETF(this.wgl, this.compiledFilters, this.framebufferPool);
         this.config = [
-            {min: 0.01, max: 60, step : 0.001, value: this.sigmaC, label: "Radius C"},
+            {min: 0.01, max: 60, step : 0.001, value: this.sigmaC, label: "Thickness"},
             {min: 0.01, max: 60, step : 0.001, value: this.sigmaM, label: "Radius M"},
             {min: 3, max: 21, step : 2, value: this.etfKernelSize, label: "ETF Kernel Size"},
             {min: 0.1, max: 1, step : 0.0001, value: this.tau, label: "Tau"},
@@ -52,7 +52,7 @@ class WebGLFDoG implements RenderFilter{
         iteration : number
     ) : void {
         this.p = p;
-        this.sigmaS = sigmaC * WebGLFDoG.SCALAR;
+        this.sigmaS = sigmaC * WebGLCoherentLineDrawing.SCALAR;
         this.tau = tau;
         this.etfKernelSize = etfKernelSize;
         this.sigmaM = sigmaM;
@@ -119,4 +119,4 @@ class WebGLFDoG implements RenderFilter{
     }
 }
 
-export default WebGLFDoG;
+export default WebGLCoherentLineDrawing;

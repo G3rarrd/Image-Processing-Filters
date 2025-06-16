@@ -3,11 +3,12 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLDithering from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLDithering";
 
 function useDithering () {
-    const {rendererRef, setOpenFilterControl, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
+    const {rendererRef, setOpenFilterControl, filterFuncRef, setSliderConfigs, setFilterName} = useContext(ImageProcessingContext);
     
     function handleDithering() {
         if (!rendererRef || ! rendererRef.current) return;
-
+        const filterName : string ="Dithering"; 
+        setFilterName(filterName);
         setOpenFilterControl(() => true);
 
         const dithering : WebGLDithering = rendererRef.current.compiledFilters.dithering;

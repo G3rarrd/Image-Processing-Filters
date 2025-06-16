@@ -3,11 +3,12 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLPixelize from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLPixelize";
 
 function usePixelize () {
-    const {rendererRef, setSliderConfigs, setOpenFilterControl, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, setSliderConfigs, setOpenFilterControl, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
     
     function handlePixelizeClick() {
         if (!rendererRef || ! rendererRef.current) return;
-
+        const filterName : string ="Pixelize"; 
+        setFilterName(filterName);
         setOpenFilterControl(() => true);
 
         const pixelize : WebGLPixelize = rendererRef.current.compiledFilters.pixelize;

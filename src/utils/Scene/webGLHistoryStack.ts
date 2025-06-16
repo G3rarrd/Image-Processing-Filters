@@ -21,10 +21,8 @@ class WebGLHistoryStack {
         const tex = new Texture(gl);
         const dstTexture = tex.createFramebufferTexture(width, height);
 
-
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, dstFBO);
         gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, dstTexture,0)
-
 
         gl.blitFramebuffer(
             0, 0, width, height,

@@ -3,9 +3,11 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLSharpen from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLSharpen";
 
 function useSharpen() {
-    const {rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
 
     function handleSharpen () {
+        const filterName : string ="Sharpen"; 
+        setFilterName(filterName);
         if (! rendererRef || ! rendererRef.current) return;
 
         const sharpen : WebGLSharpen = rendererRef.current.compiledFilters.sharpen;

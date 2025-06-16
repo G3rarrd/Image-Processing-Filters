@@ -3,28 +3,29 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLCore from "../../../../../../utils/webGLCore";
 import WebGLCompileFilters from "../../../../../../utils/ShaderCodes/postprocessingEffects/webGLCompileFilters";
 import FramebufferPool from "../../../../../../utils/framebuffer_textures/framebufferPool";
-import WebGLFDoG from "../../../../../../utils/ShaderCodes/postprocessingEffects/compositeTextures/webGLFDoG";
+import WebGLCoherentLineDrawing from "../../../../../../utils/ShaderCodes/postprocessingEffects/compositeTextures/webGLCoherentLineDrawing";
 import WebGLRenderer from "../../../../../../utils/Scene/webGLRender";
 
-function useFDoG () {
-    const {rendererRef,setOpenFilterControl, filterFuncRef, setSliderConfigs} = useContext(ImageProcessingContext);
+function useCoherentLineDrawing () {
+    const {rendererRef,setOpenFilterControl, filterFuncRef, setSliderConfigs, setFilterName} = useContext(ImageProcessingContext);
     
     function handleFDoGClick() {
         if (!rendererRef || ! rendererRef.current) return;
-
+        const filterName : string ="Coherent Line Drawing"; 
+        setFilterName(filterName);
         setOpenFilterControl(() => true);
         const renderer : WebGLRenderer =rendererRef.current; 
         const wgl : WebGLCore = renderer.wgl;
         const compiledFilter : WebGLCompileFilters = renderer.compiledFilters;
         const framebufferPool : FramebufferPool = renderer.framebufferPool;
-        const fDoG : WebGLFDoG = new WebGLFDoG(wgl, framebufferPool, compiledFilter);
+        const fDoG : WebGLCoherentLineDrawing = new WebGLCoherentLineDrawing(wgl, framebufferPool, compiledFilter);
 
 
         setSliderConfigs([...fDoG.config]); // Helps initiate the slider(s)
 
         filterFuncRef.current = (configs) => {
             let sigmaM : number | undefined= configs.find(cfg => cfg.label === "Radius M")?.value;
-            let sigmaC : number | undefined = configs.find(cfg => cfg.label === "Radius C")?.value;
+            let sigmaC : number | undefined = configs.find(cfg => cfg.label === "Thickness")?.value;
             let etfKernelSize : number | undefined = configs.find(cfg => cfg.label === "ETF Kernel Size")?.value;
             let tau : number | undefined= configs.find(cfg => cfg.label === "Tau")?.value;
             let p : number | undefined = configs.find(cfg => cfg.label === "P")?.value;
@@ -38,7 +39,7 @@ function useFDoG () {
             }
             
             if (sigmaC === undefined ) {
-                console.warn("Radius C label was not found using initial value");
+                console.warn("Thickness label was not found using initial value");
                 sigmaC = 1.6;
             }
 
@@ -70,4 +71,4 @@ function useFDoG () {
     }
     return {handleFDoGClick};
 }
-export default useFDoG;
+export default useCoherentLineDrawing;

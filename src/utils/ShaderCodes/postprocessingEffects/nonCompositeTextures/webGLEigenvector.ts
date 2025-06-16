@@ -26,6 +26,11 @@ class WebGLEigenvector implements RenderFilter {
     }
 
     public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+         /**
+         * Accepts 1 texture
+         * @param inputTextures[0] : Blurred Structured Texture
+        */
+        
         if (! this.program) throw new Error("Eigenvector Shader program is not compiled");
         
         const pass = new WebGLShaderPass(

@@ -3,7 +3,7 @@ import FramebufferPool from '../../../framebuffer_textures/framebufferPool';
 import WebGLCore from "../../../webGLCore";
 import { RenderFilter } from "../webGLRenderFilter";
 import WebGLFBL from "./WebGLFBL";
-import WebGLFDoG from "./webGLFDoG";
+import WebGLCoherentLineDrawing from "./webGLCoherentLineDrawing";
 import WebGLSuperImpose from "../nonCompositeTextures/webGLSuperImpose";
 import Framebuffer from "../../../framebuffer_textures/framebuffer";
 import WebGLCompileFilters from "../webGLCompileFilters";
@@ -11,7 +11,7 @@ import { RangeSlidersProps } from "../../../../types/slider";
 
 class WebGLFBIA implements RenderFilter{
     private readonly wgl : WebGLCore;
-    private readonly fdog : WebGLFDoG;
+    private readonly fdog : WebGLCoherentLineDrawing;
     private readonly fbl : WebGLFBL;
     private readonly framebufferPool : FramebufferPool;
     private readonly compiledFilters : WebGLCompileFilters;
@@ -46,7 +46,7 @@ class WebGLFBIA implements RenderFilter{
         this.wgl = wgl;
         this.framebufferPool = framebufferPool;
         this.compiledFilters = compiledFilters ;
-        this.fdog = new WebGLFDoG(this.wgl, this.framebufferPool, compiledFilters);
+        this.fdog = new WebGLCoherentLineDrawing(this.wgl, this.framebufferPool, compiledFilters);
         this.fbl = new WebGLFBL(this.wgl, this.framebufferPool, compiledFilters);
     
         this.config = [

@@ -12,7 +12,7 @@ class WebGLQuantization implements RenderFilter {
     private readonly framebufferPool: FramebufferPool;
     private readonly postProcessing : PostProcessingVertexShader;
     private program: WebGLProgram | null = null; 
-    private colorCount : number = 2;
+    private colorCount : number = 10;
     public config : RangeSlidersProps[];
     /** 
     */

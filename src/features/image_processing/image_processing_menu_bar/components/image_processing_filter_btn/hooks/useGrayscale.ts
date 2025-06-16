@@ -3,11 +3,12 @@ import { ImageProcessingContext } from "../../../../components/image_processing_
 import WebGLGrayScale from "../../../../../../utils/ShaderCodes/postprocessingEffects/nonCompositeTextures/webGLGrayscale";
 
 function useGrayscale () {
-    const {rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
 
     function handleGrayscale () {
         if (! rendererRef || !rendererRef.current) return;
-
+        const filterName : string ="Grayscale"; 
+        setFilterName(filterName);
         const renderer = rendererRef.current;
         const grayscale : WebGLGrayScale =renderer.compiledFilters.grayScale;
         // let currentTexture : WebGLTexture = renderer.currentTexture;
@@ -22,7 +23,7 @@ function useGrayscale () {
         const imgWidth = renderer.img.naturalWidth;
         const imgHeight = renderer.img.naturalHeight;
         renderer.historyStack.add(renderer.currentTexture, imgWidth, imgHeight);
-        
+
         renderer.holdCurrentTexture = renderer.historyStack.getUndoStackTop();
     }
 

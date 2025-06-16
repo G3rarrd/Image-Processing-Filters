@@ -42,6 +42,12 @@ class WebGLEdgeBlurPass implements RenderFilter {
     }
 
     public render(inputTextures: WebGLTexture[], textureWidth : number , textureHeight : number) : Framebuffer  {
+         /**
+         * Accepts 2 textures
+         * @param inputTextures[0] : Original Image or edited Texture
+         * @param inputTextures[1] : Edge Tangent Flow texture
+        */
+        
         if (! this.program) throw new Error("Edge Blur Pass Shader program is not compiled");
         
         const pass = new WebGLShaderPass(

@@ -5,7 +5,7 @@ import { ImageProcessingContext } from "../../../../../components/image_processi
 import styles from './image_processing_filter_control_panel.module.css'
 import { RangeSlidersProps } from "../../../../../../../types/slider";
 function ImageProcessingFilterControlPanel () {
-    const {rendererRef, sliderConfigs, openFilterControl, setOpenFilterControl, setSliderConfigs, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, sliderConfigs, openFilterControl, setOpenFilterControl, setSliderConfigs, filterFuncRef, filterName} = useContext(ImageProcessingContext);
     
     const handleSliderChange = useCallback((label : string, newValue : number) => {
         setSliderConfigs((prevConfigs)  => {
@@ -46,7 +46,7 @@ function ImageProcessingFilterControlPanel () {
     return (
     <div className={`${styles.filter_control_panel_container} ${openFilterControl ? styles.visible : styles.hidden}`}  >
         <div className={`${styles.filter_control_panel_title_container}`}>
-            <span className={`${styles.filter_control_panel_title}`}>Title</span>
+            <span className={`${styles.filter_control_panel_title}`}>{filterName}</span>
             <button onClick={handleClose} className={`${styles.filter_control_panel_close_btn}`}> </button>
         </div>
         {sliderConfigs.map((config) => (

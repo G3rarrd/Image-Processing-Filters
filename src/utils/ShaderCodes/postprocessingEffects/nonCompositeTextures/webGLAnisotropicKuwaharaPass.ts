@@ -13,10 +13,10 @@ class WebGLAnisotropicKuwaharaPass implements RenderFilter {
     private readonly postProcessing : PostProcessingVertexShader;
     private program: WebGLProgram | null = null; 
     private kernelSize : number = 5;
-    private hardness : number = 100;
+    private hardness : number = 50;
     private q : number = 18;
     private zeta : number = 2;
-    private zeroCrossing : number = 1;
+    private zeroCrossing : number = 240;
     private alpha : number = 1;
     public config : RangeSlidersProps[];
 
@@ -29,10 +29,10 @@ class WebGLAnisotropicKuwaharaPass implements RenderFilter {
         this.framebufferPool = framebufferPool;
         this.config = [
             {max : 20, min : 4, label : "Radius", value : this.kernelSize, step : 2},
-            {max : 200, min : 1, label : "Hardness", value : this.hardness, step : 1},
-            {max : 21, min : 1, label : "Q", value : this.q, step : 1},
-            {max : 20, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
-            {max : 2, min : 0.01, label : "Zero Crossing", value : this.zeroCrossing, step : 0.01},
+            {max : 100, min : 1, label : "Hardness", value : this.hardness, step : 1},
+            {max : 21, min : 1, label : "Sharpness", value : this.q, step : 1},
+            {max : 3, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
+            {max : 2, min : 0.01, label : "Angle", value : this.zeroCrossing, step : 0.01},
             {max : 2, min : 0.01, label : "Alpha", value : this.alpha, step : 1},
         ]
     }
@@ -53,7 +53,7 @@ class WebGLAnisotropicKuwaharaPass implements RenderFilter {
         this.hardness = hardness;
         this.q  = q;
         this.zeta = zeta;
-        this.zeroCrossing = zeroCrossing * (Math.PI / 8.0);
+        this.zeroCrossing = zeroCrossing ;
         this.alpha = alpha;
     }
 
@@ -105,11 +105,12 @@ class WebGLAnisotropicKuwaharaPass implements RenderFilter {
             if (hardnessLocation === null) throw new Error(setUniformLocationError(U_HARDNESS));
             if (qLocation === null) throw new Error(setUniformLocationError(U_Q));
             
+            this.zeroCrossing = (this.zeroCrossing * Math.PI / 180) / 8.0;
             gl.uniform1i(imageLocation, TEX_NUM);
             gl.uniform1i(etfLocation, TEX_NUM + 1);
             gl.uniform1i(kernelSizeLocation, this.kernelSize);
             gl.uniform1f(zetaLocation, this.zeta / (this.kernelSize / 2));
-            gl.uniform1f(zeroCrossingLocation, this.zeroCrossing);
+            gl.uniform1f(zeroCrossingLocation,  this.zeroCrossing);
             gl.uniform1f(hardnessLocation, this.hardness);
             gl.uniform1f(qLocation, this.q);
         }
@@ -137,8 +138,7 @@ class WebGLAnisotropicKuwaharaPass implements RenderFilter {
         vec2 texelSize = 1.0 / vec2(textureSize(u_image, 0));
         int kernelRadius = u_kernel_size / 2;
         float r = float(kernelRadius);
-        
-        
+
         int k;
         vec4 m[8];
         vec3 s[8];
@@ -188,6 +188,7 @@ class WebGLAnisotropicKuwaharaPass implements RenderFilter {
         for (int y = -max_y; y <= max_y; y++) {
             for (int x = -max_x; x <= max_x; x++) {
                 vec2 v = SR * vec2(float(x), float(y));
+                if(dot(v, v) > 0.25) continue;
                 vec3 c = texture(u_image, v_texCoord + (vec2(x, y) * texelSize)).rgb;
                 c = clamp(c, 0.0, 1.0);
                 float sum = 1e-6;

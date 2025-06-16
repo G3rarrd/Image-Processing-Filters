@@ -8,10 +8,11 @@ import FramebufferPool from "../../../../../../utils/framebuffer_textures/frameb
 
 
 function useAnisotropicKuwahara () {
-    const {rendererRef, setSliderConfigs,setOpenFilterControl, filterFuncRef} = useContext(ImageProcessingContext);
+    const {rendererRef, setSliderConfigs,setOpenFilterControl, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
     function handleAnisotropicKuwaharaClick () {
         if (! rendererRef || ! rendererRef.current) return;
-        
+        const filterName : string ="Anisotropic Kuwahara"; 
+        setFilterName(filterName);
         setOpenFilterControl(() => true);
         const renderer : WebGLRenderer = rendererRef.current;
         const wgl : WebGLCore = rendererRef.current.wgl;
@@ -26,7 +27,7 @@ function useAnisotropicKuwahara () {
             let hardness : number | undefined = configs.find(cfg => cfg.label === "Hardness")?.value;
             let sharpness : number | undefined = configs.find(cfg => cfg.label === "Sharpness")?.value;
             let zeta : number | undefined = configs.find(cfg => cfg.label === "Zeta")?.value;
-            let zeroCrossing : number | undefined = configs.find(cfg => cfg.label === "Zero Crossing")?.value;
+            let zeroCrossing : number | undefined = configs.find(cfg => cfg.label === "Angle")?.value;
             let alpha : number | undefined = configs.find(cfg => cfg.label === "Alpha")?.value;
             let sigma : number | undefined = configs.find(cfg => cfg.label === "Sigma C")?.value;
 

@@ -10,7 +10,7 @@ import useBinaryThreshold from './hooks/useBinaryThreshold';
 import usePixelize from './hooks/usePixelize';
 import useGaussianBlur from './hooks/useGaussianBlur';
 import useXDoG from './hooks/useXDoG';
-import useFDoG from './hooks/useFDoG';
+import useCoherentLineDrawing from './hooks/useCoherentLineDrawing';
 import useFBL from './hooks/useFBL';
 import { ImageProcessingContext } from '../../../components/image_processing_context/image_processing_provider';
 import { useDropdownExit } from '../../hooks/useDropdownExit';
@@ -52,7 +52,7 @@ const ImageProcessingFilterBtn = () => {
     const {handlePixelizeClick} = usePixelize();
     const {handleGaussianBlurClick} = useGaussianBlur();
     const {handleXDoGClick} = useXDoG();
-    const {handleFDoGClick} = useFDoG();
+    const {handleFDoGClick} = useCoherentLineDrawing();
     const {handleFBLClick} = useFBL();
     const {handleKuwaharaClick} = useKuwahara();
     const {handleGeneralizedKuwaharaClick} = useGeneralizedKuwahara();
@@ -70,7 +70,7 @@ const ImageProcessingFilterBtn = () => {
         { filter: 'Pixelize', handler: handlePixelizeClick },
         { filter: 'Gaussian Blur', handler: handleGaussianBlurClick },
         { filter: 'XDoG', handler: handleXDoGClick },
-        { filter: 'FDoG', handler: handleFDoGClick },
+        { filter: 'Coherent Line Drawing', handler: handleFDoGClick },
         { filter: 'FBL', handler: handleFBLClick },
         { filter: 'Kuwahara', handler: handleKuwaharaClick},
         { filter: 'Generalized Kuwahara', handler: handleGeneralizedKuwaharaClick},

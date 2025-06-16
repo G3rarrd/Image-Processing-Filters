@@ -6,11 +6,12 @@ import WebGLCompileFilters from "../../../../../../utils/ShaderCodes/postprocess
 import FramebufferPool from '../../../../../../utils/framebuffer_textures/framebufferPool';
 
 function useGaussianBlur () {
-    const {setSliderConfigs, setOpenFilterControl, rendererRef, filterFuncRef} = useContext(ImageProcessingContext);
+    const {setSliderConfigs, setOpenFilterControl, rendererRef, filterFuncRef, setFilterName} = useContext(ImageProcessingContext);
     
     function handleGaussianBlurClick () {
         if (!rendererRef || !rendererRef.current) return;
-
+        const filterName : string ="Gaussian Blur"; 
+        setFilterName(filterName);
         setOpenFilterControl(() => true);
 
         const renderer = rendererRef.current;
