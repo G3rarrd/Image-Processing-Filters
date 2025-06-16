@@ -72,7 +72,7 @@ function useFBL () {
             }
             
             fbl.setAttributes(etfKernelSize, sigmaE, sigmaG, rangeSigmaE, rangeSigmaG, iteration, colorCount, spreadValue);
-            rendererRef.current.renderPipeline.addFilter(fbl);
+            renderer.renderPipeline.addFilter(fbl);
             renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
             renderer.renderScene();
         }

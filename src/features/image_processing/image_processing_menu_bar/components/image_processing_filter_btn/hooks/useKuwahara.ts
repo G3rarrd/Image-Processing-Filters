@@ -25,7 +25,7 @@ function useKuwahara () {
             kuwahara.setAttributes(radius);
             renderer.renderPipeline.addFilter(kuwahara);
             renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
-            rendererRef.current.renderScene();
+            renderer.renderScene();
         }
 
         filterFuncRef.current(kuwahara.config); // Applies on click

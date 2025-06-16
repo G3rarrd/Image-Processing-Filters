@@ -1,27 +1,19 @@
 import { useRef, useState } from 'react';
 import { useDropdownExit } from '../../hooks/useDropdownExit';
-import useFitArea from './hooks/useFitArea';
-import useZoomIn from './hooks/useZoomIn';
-import useZoomOut from './hooks/useZoomOut';
 
 import baseStyles from '../image_processing_menu_btns_base.module.css';
 // import styles from './image_processing_view_btn.module.css';
-import { useHotkeys } from 'react-hotkeys-hook';
+
+import useGlobalHotKeys from './hooks/useGlobalViewShortcuts';
 const ImageProcessingViewBtn = () => {
+    const {handleZoomIn, handleZoomOut, handleFitAreaClick} = useGlobalHotKeys(); 
+    
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [openDropdown, setOpenDropdown] = useState<boolean>(false)
     
-    useHotkeys('ctrl+0', event =>{
-        handleFitAreaClick();
-    })
-
     const handleDropdownClick = () => {
         setOpenDropdown(prev => !prev);
     }
-
-    const {handleFitAreaClick} = useFitArea();
-    const {handleZoomIn} = useZoomIn();
-    const {handleZoomOut} = useZoomOut();
 
     const viewOptions = [
         {option : "Fit The Area", handler : handleFitAreaClick, shortcut : "Ctrl + 0"},

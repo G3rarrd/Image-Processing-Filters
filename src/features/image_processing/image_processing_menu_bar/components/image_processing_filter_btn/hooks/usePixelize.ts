@@ -24,9 +24,9 @@ function usePixelize () {
             }
             
             pixelize.setAttributes(blockSize);
-            rendererRef.current.renderPipeline.addFilter(pixelize);
+            renderer.renderPipeline.addFilter(pixelize);
             renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
-            rendererRef.current.renderScene();
+            renderer.renderScene();
         }
 
         filterFuncRef.current(pixelize.config); // Applies on click

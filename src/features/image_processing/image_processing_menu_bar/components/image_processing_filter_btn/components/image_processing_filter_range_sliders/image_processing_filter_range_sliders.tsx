@@ -9,11 +9,12 @@ interface SliderActionProps {
 
 
 const  ImageProcessingRangeSliders : React.FC<SliderActionProps> = ({config, onChange}) => {
-
+    const progressBarLength : number = ((config.value - config.min) / (config.max - config.min) ) * 100;
 
     return (
         <div className={`${styles.range_slider_container}`}>
-            <label htmlFor={config.label}>{config.label} : {config.value}</label>
+            <span style={{width : `${progressBarLength}%`}} className={`${styles.progress_bar}`}></span>
+            <label className={`${styles.slider_label}`} htmlFor={config.label}>{config.label} : {config.value}</label>
             <input 
                 id={config.label}
                 type='range'

@@ -67,7 +67,7 @@ function useAnisotropicKuwahara () {
             anisotropicKuwahara.setAttributes(radius, hardness, sharpness, zeta, zeroCrossing, alpha, sigma);
             renderer.renderPipeline.addFilter(anisotropicKuwahara);
             renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
-            rendererRef.current.renderScene();
+            renderer.renderScene();
         }
 
         filterFuncRef.current(anisotropicKuwahara.config); // Applies on click

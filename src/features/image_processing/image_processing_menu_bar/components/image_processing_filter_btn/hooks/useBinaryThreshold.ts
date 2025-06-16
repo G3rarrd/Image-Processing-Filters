@@ -24,9 +24,9 @@ function useBinaryThreshold () {
             }
             
             binaryThreshold.setAttributes(threshold);
-            rendererRef.current.renderPipeline.addFilter(binaryThreshold);
-                        renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
-            rendererRef.current.renderScene();
+            renderer.renderPipeline.addFilter(binaryThreshold);
+            renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
+            renderer.renderScene();
         }
 
         filterFuncRef.current(binaryThreshold.config); // Applies on click

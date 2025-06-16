@@ -17,9 +17,9 @@ function useGeneralizedKuwahara () {
         filterFuncRef.current = (configs) => {
             let radius : number | undefined = configs.find(cfg => cfg.label === "Radius")?.value;
             let hardness : number | undefined = configs.find(cfg => cfg.label === "Hardness")?.value;
-            let q : number | undefined = configs.find(cfg => cfg.label === "Q")?.value;
+            let sharpness : number | undefined = configs.find(cfg => cfg.label === "Sharpness")?.value;
             let zeta : number | undefined = configs.find(cfg => cfg.label === "Zeta")?.value;
-            let zeroCrossing : number | undefined = configs.find(cfg => cfg.label === "Zero Crossing")?.value;
+            let angle : number | undefined = configs.find(cfg => cfg.label === "Angle")?.value;
         
             if (radius === undefined) {
                 console.warn("Radius label was not found using initial value");
@@ -30,9 +30,9 @@ function useGeneralizedKuwahara () {
                 console.warn("hardness label was not found using initial value");
                 hardness = 100;
             }
-            if (q === undefined) {
-                console.warn("q label was not found using initial value");
-                q = 18;
+            if (sharpness === undefined) {
+                console.warn("sharpness label was not found using initial value");
+                sharpness = 18;
             }
 
             if (zeta === undefined) {
@@ -40,15 +40,15 @@ function useGeneralizedKuwahara () {
                 zeta = 2;
             }
 
-            if (zeroCrossing === undefined) {
-                console.warn("Zero Crossing label was not found using initial value");
-                zeroCrossing = 0.01;
+            if (angle === undefined) {
+                console.warn("Angle label was not found using initial value");
+                angle = 0.01;
             }
 
-            gerneralizedKuwahara.setAttributes(radius, hardness, q, zeta, zeroCrossing);
+            gerneralizedKuwahara.setAttributes(radius, hardness, sharpness, zeta, angle);
             renderer.renderPipeline.addFilter(gerneralizedKuwahara);
             renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
-            rendererRef.current.renderScene();
+            renderer.renderScene();
         }
 
         filterFuncRef.current(gerneralizedKuwahara.config); // Applies on click

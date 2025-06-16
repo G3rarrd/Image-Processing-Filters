@@ -10,6 +10,9 @@ export interface ImageProcessingContextProps {
     openFilterControl : boolean;
     setOpenFilterControl : React.Dispatch<React.SetStateAction<boolean>>;
     
+    filterName : string;
+    setFilterName : React.Dispatch<React.SetStateAction<string>>;
+
     sliderConfigs : RangeSlidersProps[];
     setSliderConfigs : React.Dispatch<React.SetStateAction<RangeSlidersProps[]>>;
     
@@ -18,8 +21,8 @@ export interface ImageProcessingContextProps {
 
     downloadWebGL : () => void;
 
-    glCanvasRef : React.MutableRefObject<HTMLCanvasElement> | null;
-    rendererRef : React.MutableRefObject<WebGLRenderer> | null;
+    glCanvasRef : React.MutableRefObject<HTMLCanvasElement | null>;
+    rendererRef : React.MutableRefObject<WebGLRenderer | null>;
     filterFuncRef : React.MutableRefObject<(configs: RangeSlidersProps[]) => void>;
 }
 
@@ -30,6 +33,9 @@ export const defaultValue : ImageProcessingContextProps = {
     openFilterControl : false,
     setOpenFilterControl : () => {},
 
+    filterName : '',
+    setFilterName : () => {},
+
     sliderConfigs : [],
     setSliderConfigs : ()=> {},
 
@@ -38,8 +44,8 @@ export const defaultValue : ImageProcessingContextProps = {
 
     downloadWebGL : () => {},
 
-    glCanvasRef : null,
-    rendererRef : null,
+    glCanvasRef :  { current: null },
+    rendererRef :  { current: null },
     filterFuncRef : {
         current: (configs: RangeSlidersProps[]) => {},
     } 

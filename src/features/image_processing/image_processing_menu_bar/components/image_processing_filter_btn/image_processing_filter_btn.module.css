@@ -1,5 +1,3 @@
-@import 'src\vars.module.css';
-
 .filter_btn{
     /* background-color : violet; */
     background-color:  var(--color-black);

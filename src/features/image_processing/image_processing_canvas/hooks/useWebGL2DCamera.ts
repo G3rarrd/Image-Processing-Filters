@@ -33,6 +33,8 @@ const useWebGL2DScene = () => {
         
         const camera = rendererRef.current.cam;
         if (e.altKey) {
+
+            e.preventDefault();
             const clips : [number, number] | null = getClipSpaceMousePosition(e);
             if (!clips) return;
 
@@ -166,7 +168,7 @@ const useWebGL2DScene = () => {
             }
 
             
-            if (rendererRef) {
+            if (rendererRef && rendererRef.current) {
                 rendererRef.current.renderScene();
             }
             

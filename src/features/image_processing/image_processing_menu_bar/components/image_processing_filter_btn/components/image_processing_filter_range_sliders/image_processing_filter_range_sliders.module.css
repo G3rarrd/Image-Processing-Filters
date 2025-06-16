@@ -4,11 +4,76 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: red;
-    width: 100%;
+    background-color: var(--color-black-2);
+    margin: 0 1rem;
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.progress_bar{
+    position: absolute;
+    height: 100%;
+    background-color: var(--primary-color);
+    left: 0;
+    top: 0;
+    z-index: 0;
+}
+
+.slider_label{
+    /* position: absolute; */
+    padding: 0.25rem;
+    z-index: 1;
 }
 
 .slider{
-    background-color: green;
-    width: 97%;
+    position: absolute;
+    background-color: transparent;
+    width: 100%;
+    z-index: 2;
+}
+
+
+.slider::-webkit-slider-runnable-track {
+    background: transparent;
+    /* background: blue; */
+    
+    height: 6px;
+    width: 100%;
+    border-radius: 3px;
+} 
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  height: 0;
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  width: 0;
+  height: 0;
+  border: none;
+  background: transparent;
+}
+
+/** FF*/
+.slider::-moz-range-progress {
+  background-color: transparent; 
+  /* background: blue; */
+
+  height: 100%;
+  width: 100%;
+}
+.slider::-moz-range-track {  
+  background-color: transparent;
+  height: 100%;
+  width: 100%;
+}
+/* IE*/
+.slider::-ms-fill-lower {
+  background-color: transparent;
+}
+.slider::-ms-fill-upper {  
+  background-color: transparent;
 }

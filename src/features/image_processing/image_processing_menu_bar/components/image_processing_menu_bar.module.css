@@ -1,5 +1,3 @@
-@import '../../../../vars.module.css';
-
 .menu_bar{
     position: relative;
     background-color: var(--color-black);
@@ -13,7 +11,9 @@
     display: flex;
     flex-direction: row;
     width: 100%;
-    padding:0.1rem 0.1rem ;
+    padding:0.25rem 0.5rem ;
+
+    gap : 0.5rem;
 }
 
 .section_1{
@@ -23,6 +23,7 @@
     flex-direction: row;
     justify-content: start;
     align-items: center;
+    gap : 0.25rem;
 }
 
 .section_2{

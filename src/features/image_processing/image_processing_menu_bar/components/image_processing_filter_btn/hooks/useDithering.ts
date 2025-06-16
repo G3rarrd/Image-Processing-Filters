@@ -31,9 +31,9 @@ function useDithering () {
             }
             
             dithering.setAttributes(spreadValue, bayerType);
-            rendererRef.current.renderPipeline.addFilter(dithering);
+            renderer.renderPipeline.addFilter(dithering);
             renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
-            rendererRef.current.renderScene();
+            renderer.renderScene();
         }
 
         filterFuncRef.current(dithering.config); // Applies on click

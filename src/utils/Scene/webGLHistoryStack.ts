@@ -2,16 +2,16 @@ import Texture from "../framebuffer_textures/texture";
 import WebGLCore from "../webGLCore";
 
 class WebGLHistoryStack {
+    private static readonly MAX_STACK_SIZE : number; 
+    private readonly wgl : WebGLCore;
     private redoStack : WebGLTexture[] = [];
     private undoStack : WebGLTexture[] = [];
-    private readonly wgl : WebGLCore;
 
     constructor (wgl : WebGLCore) {
         this.wgl = wgl;
     }
     
     public add(texture : WebGLTexture, width : number, height : number ) : void{
-        
         const gl = this.wgl.gl;
         const srcFBO = gl.createFramebuffer();
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, srcFBO);
@@ -41,6 +41,12 @@ class WebGLHistoryStack {
         while(this.redoStack.length > 0) {
             const top = this.redoStack.pop();
             if (top) gl.deleteTexture(top);
+        }
+
+        if (this.undoStack.length > WebGLHistoryStack.MAX_STACK_SIZE) {
+            const oldTexture : WebGLTexture | undefined = this.undoStack.shift();
+            
+            if (oldTexture) gl.deleteTexture(oldTexture);
         }
     }
 

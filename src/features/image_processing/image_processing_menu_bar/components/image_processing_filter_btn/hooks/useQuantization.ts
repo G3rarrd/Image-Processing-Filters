@@ -24,9 +24,9 @@ function useQuantization () {
             }
             
             quantization.setAttributes(colorCount);
-            rendererRef.current.renderPipeline.addFilter(quantization);
+            renderer.renderPipeline.addFilter(quantization);
             renderer.currentTexture = renderer.renderPipeline.renderPass(renderer.holdCurrentTexture);
-            rendererRef.current.renderScene();
+            renderer.renderScene();
         }
 
         filterFuncRef.current(quantization.config); // Applies on click

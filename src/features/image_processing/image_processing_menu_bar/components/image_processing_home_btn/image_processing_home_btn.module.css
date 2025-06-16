@@ -9,15 +9,15 @@
     align-items: center;
     gap: 0.5rem;
     padding : 0.25rem;
-    margin : 0.25rem;
     color : #ffffff;
     font-size: var(--font-menu-btn-size);
 }
 
 .home_btn svg{
     width: calc(var(--font-menu-btn-size) + (var(--font-menu-btn-size) / 4)) ;
+    fill : var(--primary-color);
 }
 
 .home_btn svg path{
-    fill : rgb(178, 198, 229);
+
 }

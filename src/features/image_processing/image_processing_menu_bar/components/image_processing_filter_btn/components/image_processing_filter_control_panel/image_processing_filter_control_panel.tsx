@@ -47,7 +47,7 @@ function ImageProcessingFilterControlPanel () {
     <div className={`${styles.filter_control_panel_container} ${openFilterControl ? styles.visible : styles.hidden}`}  >
         <div className={`${styles.filter_control_panel_title_container}`}>
             <span className={`${styles.filter_control_panel_title}`}>Title</span>
-            <button onClick={handleClose} className={`${styles.filter_control_panel_close_btn}`}>X</button>
+            <button onClick={handleClose} className={`${styles.filter_control_panel_close_btn}`}> </button>
         </div>
         {sliderConfigs.map((config) => (
             <ImageProcessingRangeSliders

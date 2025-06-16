@@ -28,9 +28,9 @@ class WebGLGeneralizedKuwahara {
         this.config = [
             {max : 20, min : 4, label : "Radius", value : this.kernelSize, step : 2},
             {max : 200, min : 1, label : "Hardness", value : this.hardness, step : 1},
-            {max : 21, min : 1, label : "Q", value : this.q, step : 1},
+            {max : 21, min : 1, label : "Sharpness", value : this.q, step : 1},
             {max : 20, min : 1, label : "Zeta", value : this.zeta, step : 0.1},
-            {max : 2, min : 0.01, label : "Zero Crossing", value : this.zeroCrossing, step : 0.01},
+            {max : 360, min :1, label : "Angle", value : this.zeroCrossing, step : 0.1},
         ]
     }
 
@@ -92,7 +92,7 @@ class WebGLGeneralizedKuwahara {
         gl.uniform1i(imageLocation, TEX_NUM);
         gl.uniform1i(kernelSizeLocation, this.kernelSize);
         gl.uniform1f(zetaLocation, this.zeta / (this.kernelSize / 2));
-        gl.uniform1f(zeroCrossingLocation, this.zeroCrossing);
+        gl.uniform1f(zeroCrossingLocation, this.zeroCrossing * Math.PI / 180);
         gl.uniform1f(hardnessLocation, this.hardness);
         gl.uniform1f(qLocation, this.q);
     }
