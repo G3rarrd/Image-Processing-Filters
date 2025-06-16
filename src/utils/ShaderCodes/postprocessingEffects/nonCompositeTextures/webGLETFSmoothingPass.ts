@@ -79,7 +79,7 @@ class WebGLETFSmoothingPass implements RenderFilter {
     
     private static fragmentShader: string = 
         `#version 300 es
-        precision highp float;
+        precision mediump float;
         
         uniform sampler2D u_image; // tangentFlow field and magnitude;
         uniform float u_max_mag;

@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import useGrayscale from './hooks/useGrayscale';
 import useInvert from './hooks/useInvert';
 import useSobel from './hooks/useSobel';
@@ -12,34 +12,16 @@ import useGaussianBlur from './hooks/useGaussianBlur';
 import useXDoG from './hooks/useXDoG';
 import useCoherentLineDrawing from './hooks/useCoherentLineDrawing';
 import useFBL from './hooks/useFBL';
-import { ImageProcessingContext } from '../../../components/image_processing_context/image_processing_provider';
 import { useDropdownExit } from '../../hooks/useDropdownExit';
 import useKuwahara from './hooks/useKuwahara';
 import useGeneralizedKuwahara from './hooks/useGeneralizedKuwahara';
 import useAnisotropicKuwahara from './hooks/useAnisotropicKuwahara';
-
-
-import { useHotkeys } from 'react-hotkeys-hook';
 import baseStyles from '../image_processing_menu_btns_base.module.css';
 // import styles from './image_processing_filter_btn.module.css';
-const ImageProcessingFilterBtn = () => {
-    const {rendererRef} = useContext(ImageProcessingContext);
+function ImageProcessingFilterBtn() {
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [openDropdown, setOpenDropdown] = useState<boolean>(false);
 
-    useHotkeys('ctrl+z', () => {
-        if (! rendererRef || ! rendererRef.current) return;
-        rendererRef.current.holdCurrentTexture = rendererRef.current.historyStack.undo();
-        rendererRef.current.currentTexture = rendererRef.current.holdCurrentTexture;
-        rendererRef.current.renderScene();
-    });
-
-    useHotkeys('ctrl+shift+z', () => {
-        if (! rendererRef || ! rendererRef.current) return;
-        rendererRef.current.holdCurrentTexture = rendererRef.current.historyStack.redo();
-        rendererRef.current.currentTexture = rendererRef.current.holdCurrentTexture;
-        rendererRef.current.renderScene();
-    });
 
     const {handleGrayscale} = useGrayscale();
     const {handleInvert} = useInvert();
@@ -82,7 +64,6 @@ const ImageProcessingFilterBtn = () => {
     }
 
     useDropdownExit(dropdownRef, () => setOpenDropdown(false));
-    
 
     return (
         <div ref={dropdownRef} className={`${baseStyles.btn_container}`}>

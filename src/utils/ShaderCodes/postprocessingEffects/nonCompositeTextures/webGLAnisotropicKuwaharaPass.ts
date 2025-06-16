@@ -191,7 +191,7 @@ class WebGLAnisotropicKuwaharaPass implements RenderFilter {
                 if(dot(v, v) > 0.25) continue;
                 vec3 c = texture(u_image, v_texCoord + (vec2(x, y) * texelSize)).rgb;
                 c = clamp(c, 0.0, 1.0);
-                float sum = 1e-6;
+                float sum = 1e-4;
                 float w[8];
                 float z, vxx, vyy;
 

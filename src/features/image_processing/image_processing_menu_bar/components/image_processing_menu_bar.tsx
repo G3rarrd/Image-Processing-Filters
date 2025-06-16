@@ -4,6 +4,7 @@ import styles from './image_processing_menu_bar.module.css';
 import ImageProcessingFileBtn from './image_processing_file_btn/image_processing_file_btn';
 import ImageProcessingFilterBtn from "./image_processing_filter_btn/image_processing_filter_btn";
 import ImageProcessingViewBtn from "./image_processing_view_btn/image_processing_view_btn";
+import ImageProcessingEditBtn from "./image_processing_edit_btn/image_processing_edit_btn";
 
 const ImageProcessingMenuBar = () => {
     return (
@@ -18,6 +19,7 @@ const ImageProcessingMenuBar = () => {
                 <ImageProcessingFileBtn/>
                 <ImageProcessingFilterBtn/>
                 <ImageProcessingViewBtn/>
+                <ImageProcessingEditBtn/>
             </div>
             
         </div>

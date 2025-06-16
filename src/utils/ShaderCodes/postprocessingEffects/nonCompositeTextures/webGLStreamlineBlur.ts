@@ -109,7 +109,7 @@ class WebGLStreamlineBlur implements RenderFilter {
         vec2 normalizeVector(vec2 vector){
             float len = length(vector);
             if (len < 1e-4) return vec2(1.0, 0.0); // default direction (e.g., horizontal)
-            else return normalize(vector);
+            else return vector / len;
         }
 
         void main() {

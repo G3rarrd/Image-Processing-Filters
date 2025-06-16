@@ -34,22 +34,22 @@
     content: '';
     background-color: var(--text-color);
     width: 100%;
-    height: 75%;
+    height: 60%;
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 5%;
+    width: 3%;
     transform: translate(-50%, -50%) rotateZ(-45deg);
 }
 .filter_control_panel_close_btn::after{
     content: '';
     background-color: var(--text-color);
     width: 100%;
-    height: 75%;
+    height: 60%;
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 5%;
+    width: 3%;
     transform: translate(-50%, -50%) rotateZ(45deg);
 }
 

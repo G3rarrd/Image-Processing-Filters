@@ -3,7 +3,7 @@ import useFitArea from "./useFitArea";
 import useZoomIn from "./useZoomIn";
 import useZoomOut from "./useZoomOut";
 
-function useGlobalHotKeys () {
+function useGlobalViewShortcuts () {
     const {handleFitAreaClick} = useFitArea();
     const {handleZoomIn} = useZoomIn();
     const {handleZoomOut} = useZoomOut();
@@ -44,4 +44,4 @@ function useGlobalHotKeys () {
     return {handleZoomIn, handleZoomOut, handleFitAreaClick};
 };
 
-export default useGlobalHotKeys;
+export default useGlobalViewShortcuts;

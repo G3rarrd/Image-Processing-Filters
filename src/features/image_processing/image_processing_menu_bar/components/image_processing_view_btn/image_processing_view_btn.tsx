@@ -4,9 +4,9 @@ import { useDropdownExit } from '../../hooks/useDropdownExit';
 import baseStyles from '../image_processing_menu_btns_base.module.css';
 // import styles from './image_processing_view_btn.module.css';
 
-import useGlobalHotKeys from './hooks/useGlobalViewShortcuts';
-const ImageProcessingViewBtn = () => {
-    const {handleZoomIn, handleZoomOut, handleFitAreaClick} = useGlobalHotKeys(); 
+import useGlobalViewShortcuts from './hooks/useGlobalViewShortcuts';
+function ImageProcessingViewBtn  ()  {
+    const {handleZoomIn, handleZoomOut, handleFitAreaClick} = useGlobalViewShortcuts(); 
     
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [openDropdown, setOpenDropdown] = useState<boolean>(false)

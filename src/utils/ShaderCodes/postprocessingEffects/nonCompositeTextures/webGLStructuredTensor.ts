@@ -54,7 +54,7 @@ class WebGLStructuredTensor implements RenderFilter {
      * */ 
     private static readonly fragmentShader = 
     `#version 300 es
-    precision highp float;
+    precision mediump float;
     
     uniform sampler2D u_image;
     
