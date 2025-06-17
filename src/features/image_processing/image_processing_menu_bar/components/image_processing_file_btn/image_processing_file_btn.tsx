@@ -5,6 +5,7 @@ import useUpload from "../../../../../hooks/useUpload";
 import { useHotkeys } from 'react-hotkeys-hook';
 import baseStyles from '../image_processing_menu_btns_base.module.css';
 import { useDropdownExit } from "../../hooks/useDropdownExit";
+import useExport from "./hooks/useExport";
 // import styles from "./image_processing_file_btn.module.css";
 const ImageProcessingFileBtn = () => {
     const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -24,11 +25,13 @@ const ImageProcessingFileBtn = () => {
         if(! fileRef || ! fileRef.current) return;
         fileRef.current.click();
     }
-    const {handleUpload} = useUpload();
 
+    const {handleUpload, fileNameRef} = useUpload();
+    const {handleExport} = useExport(fileNameRef.current);
 
     const fileOptions = [
         {option : 'Open...', handler : handleOpen, shortcut : "Ctrl + O"},
+        {option : 'Export', handler : handleExport, shortcut : ""},
     ]
 
     useDropdownExit(dropdownRef, () => setOpenDropdown(false));

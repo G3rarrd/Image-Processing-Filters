@@ -105,7 +105,7 @@ const useWebGL2DScene = () => {
 
         return [displayWidth, displayHeight];
     }
-
+    
     useEffect(() => {
         const handleResize = () => {
             const dim = getCanvasDimensions();
@@ -117,7 +117,6 @@ const useWebGL2DScene = () => {
                 camera.setViewProjection(); 
                 if (!glCanvasRef) throw new Error ("webGL ref is not available")
                 // const glCanvas: HTMLCanvasElement | null = glCanvasRef.current;
-
 
                 rendererRef.current.gl.canvas.width = dim[0];
                 rendererRef.current.gl.canvas.height = dim[1];
@@ -134,8 +133,6 @@ const useWebGL2DScene = () => {
         };
 
     }, [canvasDimensions]);
-
-
 
     useEffect (() => {
         const img = new Image();
@@ -166,18 +163,15 @@ const useWebGL2DScene = () => {
 
                 rendererRef.current  = new WebGLRenderer(gl, camera, img);
             }
-
             
             if (rendererRef && rendererRef.current) {
                 rendererRef.current.renderScene();
             }
-            
         };
         return () => {
             img.onload = null;
         }
         
-
     }, [ src, canvasDimensions]);
 
     return {handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, canvasDimensions};

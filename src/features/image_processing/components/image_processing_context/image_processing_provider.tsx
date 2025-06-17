@@ -1,8 +1,5 @@
-import { ImageProcessingContextProps, defaultValue } from './image_processing_context';
-
 import { createContext, useState, ReactNode, useRef} from 'react';
-
-import WebGLImageExporter from '../../../../utils/webGLImageExporter';
+import { ImageProcessingContextProps, defaultValue } from './image_processing_context';
 import WebGLRenderer from '../../../../utils/Scene/webGLRender';
 import { RangeSlidersProps } from '../../../../types/slider';
 
@@ -19,22 +16,6 @@ export const ImageProcessingProvider : React.FC<{children : ReactNode}> = ({chil
     const rendererRef = useRef<WebGLRenderer | null>(null);
     
     const filterFuncRef = useRef<(configs: RangeSlidersProps[]) => void>(() => {});
-    
-    const downloadWebGL = () : void => {
-        const img = new Image();
-        if(!src) throw new Error("Image Source not Found");
-        img.src = src
-        const glCanvas: HTMLCanvasElement | null = glCanvasRef.current;
-        const gl : WebGL2RenderingContext | null | undefined = glCanvas?.getContext('webgl2');
-        
-        if (! gl ) throw new Error("Unable to download image: WebGL Not found")
-        if (! rendererRef.current) throw new Error("Unable to download image: Rendered Image not Found")
-        
-        const download = new WebGLImageExporter(gl);
-        if (! rendererRef.current.currentTexture) throw new Error("Unable to download image: No texture Found")
-        
-        download.export(rendererRef.current.currentTexture, img.naturalWidth, img.naturalHeight);
-    }
 
 
     const providerValue = {
@@ -53,7 +34,6 @@ export const ImageProcessingProvider : React.FC<{children : ReactNode}> = ({chil
         imageError, 
         setImageError, 
 
-        downloadWebGL, 
 
         glCanvasRef, 
         rendererRef,
